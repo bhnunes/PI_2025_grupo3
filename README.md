@@ -3,13 +3,13 @@
 [![Status do Projeto](https://img.shields.io/badge/Status-Em%20Desenvolvimento-yellow.svg)](https://github.com/SEU_USUARIO/NOME_DO_REPOSITORIO)
 [![Licença](https://img.shields.io/badge/Licença-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-<p align="center">
-  <img src="https://via.placeholder.com/800x300/007BFF/FFFFFF?text=Logo+da+Plataforma+(Substitua+por+sua+logo)" alt="Logo da Plataforma" width="800">
-</p>
-
 ## 🐶🐱 Sobre o Projeto
 
 Este projeto, desenvolvido como parte do Projeto Integrador do curso de Bacharelado em Ciência de Dados da Univesp, visa criar uma plataforma web para facilitar a localização, identificação e conexão de animais perdidos ou em situação de rua na região de Americana, SP. Acreditamos que a tecnologia pode ser uma poderosa aliada na proteção animal, e esta plataforma é nossa contribuição para tornar mais fácil o reencontro de animais com seus tutores e promover a adoção responsável.
+
+<p align="center">
+  <img src="Images\dog.webp" alt="Logo da Plataforma" width="400">
+</p>
 
 ## ✨ Funcionalidades Principais
 
@@ -44,35 +44,33 @@ Se você se interessa por este projeto e gostaria de contribuir, siga os passos 
 
 1.  **Faça um Fork:** Clique no botão "Fork" no canto superior direito desta página para criar uma cópia do repositório em sua conta do GitHub.
 2.  **Clone o Repositório:**
-   ```bash
-   git clone https://github.com/SEU_USUARIO/NOME_DO_REPOSITORIO.git
     ```
-    Substitua `SEU_USUARIO` pelo seu nome de usuário do GitHub e `NOME_DO_REPOSITORIO` pelo nome que você deu ao repositório *forkado*.
+    https://github.com/bhnunes/PI_2025_grupo3.git
+    ```
 3.  **Crie uma Branch:**
-    ```bash
+    ```
     git checkout -b sua-branch
     ```
+
 4.  **Faça suas Alterações:** Implemente as melhorias ou correções desejadas.
+
 5.  **Commit suas Alterações:**
-    ```bash
+    ```
     git add .
     git commit -m "Sua mensagem de commit"
     ```
+
 6.  **Push para a sua Branch:**
-    ```bash
+    ```
     git push origin sua-branch
     ```
-7.  **Crie um Pull Request:** No GitHub, vá para a página do seu repositório *forkado* e clique em "New Pull Request". Selecione a sua *branch* e a *branch* `main` do repositório original. Descreva suas alterações e envie o *Pull Request*.
+
+7.  **Crie um Pull Request:** No GitHub, vá para a página do seu repositório *forkado* e clique em "New Pull Request". 
+Selecione a sua *branch* e a *branch* `main` do repositório original. Descreva suas alterações e envie o *Pull Request*.
 
 ## 🤝 Licença
 
 Este projeto está licenciado sob a [Licença MIT](https://opensource.org/licenses/MIT).
 
-## ✉️ Contato
-
-Se tiver alguma dúvida ou sugestão, entre em contato com a equipe do projeto:
-
-*   [Seu Nome] - [Seu Email]
-*   [Nome do Colega] - [Email do Colega]
 
 Agradecemos o seu interesse e esperamos que esta plataforma possa fazer a diferença na vida dos animais e da comunidade!
