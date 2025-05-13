@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Principal - Animais Perdidos{% endblock %}
+
+{% block head_extra %}
+    {{ super() }}
+    <!-- Leaflet CSS para ícones customizados do Folium, se necessário -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <style>
+        .folium-map { height: 60vh !important; min-height: 400px; } /* Ajuste a altura conforme necessário */
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h1>Plataforma PetEncontra</h1>
+    <p class="lead">Ajudando a reunir pets perdidos com seus tutores.</p>
+</div>
+
+<div id="map-container">
+    {% if mapa_html %}
+        {{ mapa_html|safe }}
+    {% else %}
+        <p class="text-center">Não foi possível carregar o mapa. Verifique a conexão ou tente mais tarde.</p>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts_extra %}
+<script>
+function encerrarBusca(petId) {
+    if (confirm('Tem certeza que deseja encerrar a busca por este PET? Esta ação não pode ser desfeita.')) {
+        fetch(`/encerrar_busca/${petId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                // Adicionar CSRF token se estiver usando Flask-WTF
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.reload(); // Recarrega a página para atualizar o mapa
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao encerrar busca:', error);
+            alert('Ocorreu um erro de comunicação. Tente novamente.');
+        });
+    }
+}
+</script>
+{% endblock %}

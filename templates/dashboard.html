@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Estatísticas{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Dashboard de Animais Perdidos e Encontrados</h2>
+
+{% if data and not data.sem_dados %}
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card text-white bg-danger mb-3">
+                <div class="card-header">Total de Pets Perdidos Atualmente</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ data.total_perdidos or 0 }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success mb-3">
+                <div class="card-header">Total de Pets Já Encontrados</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ data.total_encontrados or 0 }}</h5>
+                </div>
+            </div>
+        </div>
+        {% if data.stats_chart %}
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-header">Visão Geral</div>
+                <div class="card-body text-center">
+                     <img src="data:image/png;base64,{{ data.stats_chart }}" alt="Gráfico de Estatísticas" class="img-fluid">
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="row mt-4">
+        {% if data.top_bairros_perdidos %}
+        <div class="col-md-6">
+            <h4>Top 5 Bairros com Mais Pets Perdidos</h4>
+            <ul class="list-group">
+                {% for bairro in data.top_bairros_perdidos %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {{ bairro.BAIRRO }}
+                    <span class="badge badge-primary badge-pill">{{ bairro.count }}</span>
+                </li>
+                {% else %}
+                <li class="list-group-item">Nenhum dado de bairro disponível.</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        {% if data.wordcloud_image %}
+        <div class="col-md-6">
+            <h4>Nuvem de Palavras (Comentários)</h4>
+            <div class="text-center">
+                <img src="data:image/png;base64,{{ data.wordcloud_image }}" alt="Nuvem de Palavras" class="img-fluid">
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if data.latest_cases %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <h4>Últimos Pets Cadastrados (Não Encontrados)</h4>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Espécie</th>
+                            <th>Bairro</th>
+                            <th>Data Cadastro</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pet in data.latest_cases %}
+                        <tr>
+                            <td>{{ pet.NOME_PET or 'N/A' }}</td>
+                            <td>{{ pet.ESPECIE }}</td>
+                            <td>{{ pet.BAIRRO }}</td>
+                            <td>{{ pet.CREATED_AT.strftime('%d/%m/%Y %H:%M') }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center">Nenhum pet recente para exibir.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+{% elif data and data.sem_dados %}
+    <div class="alert alert-info" role="alert">
+        Ainda não há dados suficientes para exibir as estatísticas. Cadastre mais pets ou verifique mais tarde!
+    </div>
+{% else %}
+    <div class="alert alert-warning" role="alert">
+        Não foi possível carregar os dados do dashboard.
+    </div>
+{% endif %}
+{% endblock %}

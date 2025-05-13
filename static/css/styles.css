@@ -1,0 +1,32 @@
+body {
+    font-family: 'Arial', sans-serif;
+    padding-bottom: 60px; /* Para o rodapé fixo não sobrepor conteúdo */
+}
+
+.footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: #f8f9fa; /* Cor do bootstrap light */
+    z-index: 1030; /* Para ficar acima de outros elementos se necessário */
+}
+
+/* Ajustes para o mapa Folium */
+.folium-map {
+    width: 100%;
+    /* A altura é definida inline no template index.html ou aqui se preferir */
+    /* height: 500px; */
+}
+
+.navbar-brand img {
+    margin-right: 5px;
+}
+
+/* Melhorar contraste de cards no dashboard */
+.card-header {
+    font-weight: bold;
+}
+.card-title {
+    font-size: 1.75rem; /* Aumentar o tamanho do número */
+}
