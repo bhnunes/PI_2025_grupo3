@@ -109,14 +109,21 @@ def principal():
 
             for pet in pets_no_mapa:
                 if pet['LATITUDE'] and pet['LONGITUDE'] and pet['THUMBNAIL_PATH']:
+
+                    encerrar_url = url_for('confirmar_encerrar_busca', pet_id=pet['ID'], _external=True) # _external pode ajudar com iframes
                     popup_html = f"""
-                        {pet.get('NOME_PET', 'Sem nome')} ({pet['ESPECIE']})</h4>
+                        <h4>{pet.get('NOME_PET', 'Sem nome')} ({pet['ESPECIE']})</h4>
                         <img src='{url_for('static', filename=pet['FOTO_PATH'].replace('static/', '', 1))}' width='150'><br>
                         <b>Local:</b> {pet['RUA']}, {pet['BAIRRO']}, {pet['CIDADE']}<br>
                         <b>Contato:</b> {pet['CONTATO']}<br>
                         <b>Info:</b> {pet['COMENTARIO'][:100] + '...' if pet['COMENTARIO'] and len(pet['COMENTARIO']) > 100 else pet['COMENTARIO']}<br>
                         <b>Cadastrado em:</b> {pet['CREATED_AT'].strftime('%d/%m/%Y %H:%M')}<br>
-                        <button class='btn btn-sm btn-success' onclick='window.parent.encerrarBuscaPet({pet['ID']})'>Encerrar Busca</button>
+                        <a href="{encerrar_url}" 
+                        class="btn btn-sm btn-success" 
+                        onclick="return confirm('Tem certeza que deseja encerrar a busca por este PET? Esta ação não pode ser desfeita.');"
+                        target="_top"> 
+                        Encerrar Busca
+                        </a>
                     """
                     iframe = folium.IFrame(popup_html, width=250, height=300)
                     popup = folium.Popup(iframe, max_width=2650)
@@ -414,6 +421,32 @@ def dashboard():
 
     return render_template('dashboard.html', data=data, current_year=datetime.now().year)
 
+
+# Em app.py
+@app.route('/confirmar_encerrar_busca/<int:pet_id>')
+def confirmar_encerrar_busca(pet_id):
+    # Você pode adicionar uma página de confirmação aqui se desejar
+    # Ou processar diretamente e redirecionar
+    conn = open_conn()
+    if not conn:
+        flash("Erro de conexão com o banco.", "danger")
+        return redirect(url_for('principal'))
+    try:
+        with conn.cursor() as cursor:
+            sql = "UPDATE USERINPUT SET RESOLVIDO = 1, RESOLVIDO_AT = %s WHERE ID = %s AND (RESOLVIDO = 0 OR RESOLVIDO IS NULL)"
+            affected_rows = cursor.execute(sql, (datetime.now(), pet_id))
+            conn.commit()
+        if affected_rows > 0:
+            flash("Busca encerrada com sucesso!", "success")
+        else:
+            flash("Pet não encontrado ou busca já encerrada.", "warning")
+    except pymysql.MySQLError as e:
+        app.logger.error(f"Erro ao encerrar busca para pet ID {pet_id}: {e}")
+        flash("Erro ao atualizar o banco de dados.", "danger")
+    finally:
+        if conn:
+            conn.close()
+    return redirect(url_for('principal'))
 
 if __name__ == '__main__':
     app.run(debug=True)
