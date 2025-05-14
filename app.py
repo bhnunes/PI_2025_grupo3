@@ -110,20 +110,24 @@ def principal():
             for pet in pets_no_mapa:
                 if pet['LATITUDE'] and pet['LONGITUDE'] and pet['THUMBNAIL_PATH']:
                     popup_html = f"""
-                        <h4>{pet.get('NOME_PET', 'Sem nome')} ({pet['ESPECIE']})</h4>
+                        {pet.get('NOME_PET', 'Sem nome')} ({pet['ESPECIE']})</h4>
                         <img src='{url_for('static', filename=pet['FOTO_PATH'].replace('static/', '', 1))}' width='150'><br>
                         <b>Local:</b> {pet['RUA']}, {pet['BAIRRO']}, {pet['CIDADE']}<br>
                         <b>Contato:</b> {pet['CONTATO']}<br>
                         <b>Info:</b> {pet['COMENTARIO'][:100] + '...' if pet['COMENTARIO'] and len(pet['COMENTARIO']) > 100 else pet['COMENTARIO']}<br>
                         <b>Cadastrado em:</b> {pet['CREATED_AT'].strftime('%d/%m/%Y %H:%M')}<br>
-                        <button class='btn btn-sm btn-success' onclick='encerrarBusca({pet['ID']})'>Encerrar Busca</button>
+                        <button class='btn btn-sm btn-success' onclick='window.parent.encerrarBuscaPet({pet['ID']})'>Encerrar Busca</button>
                     """
                     iframe = folium.IFrame(popup_html, width=250, height=300)
                     popup = folium.Popup(iframe, max_width=2650)
-                    
-                    # Usar um ícone de patinha ou algo temático se desejar
-                    icon_url = url_for('static', filename=pet['THUMBNAIL_PATH'].replace('static/', '', 1))
-                    custom_icon = folium.CustomIcon(icon_url, icon_size=(40,40)) # Ajuste o tamanho conforme necessário
+
+                    thumbnail_filesystem_path = os.path.join(app.static_folder, pet['THUMBNAIL_PATH'])
+                    if os.path.exists(thumbnail_filesystem_path):
+                        custom_icon = folium.CustomIcon(thumbnail_filesystem_path, icon_size=(40,40))
+                    else:
+                        app.logger.warning(f"Arquivo de thumbnail não encontrado em: {thumbnail_filesystem_path}. Usando ícone padrão.")
+                        # Fallback para um ícone padrão do Folium se o thumbnail não for encontrado
+                        custom_icon = folium.Icon(color='blue', icon='paw', prefix='fa') # Exemplo
 
                     folium.Marker(
                         [pet['LATITUDE'], pet['LONGITUDE']],
