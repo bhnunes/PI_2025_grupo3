@@ -1,78 +1,93 @@
 {% extends "base.html" %}
 
-{% block title %}Cadastrar PET Perdido{% endblock %}
+{% block title %}Cadastrar PET Perdido - BuscaPet{% endblock %}
 
 {% block content %}
-<h2>Cadastrar Informações do PET Perdido</h2>
-<form method="POST" enctype="multipart/form-data" action="{{ url_for('cadastrar_pet') }}">
-    <div class="form-group">
-        <label for="nome_pet">Nome do PET (opcional)</label>
-        <input type="text" class="form-control" id="nome_pet" name="nome_pet">
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-7">
+        <h2 class="text-center mb-4">Registrar Informações do PET</h2>
+        <form method="POST" enctype="multipart/form-data" action="{{ url_for('cadastrar_pet') }}">
+            <div class="form-group">
+                <label for="nome_pet">Nome do PET (opcional)</label>
+                <input type="text" class="form-control" id="nome_pet" name="nome_pet" placeholder="Ex: Bob, Luna">
+            </div>
+            <div class="form-group">
+                <label for="especie">Espécie *</label>
+                <input type="text" class="form-control" id="especie" name="especie" required placeholder="Ex: Cachorro, Gato, Pássaro">
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="bairro">Bairro onde foi visto por último *</label>
+                    <select id="bairro" name="bairro" class="form-control" required>
+                        <option value="" disabled selected>Selecione o Bairro</option>
+                        {% for b in bairros %}
+                        <option value="{{ b }}">{{ b }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="rua">Rua onde foi visto por último *</label>
+                    <select id="rua" name="rua" class="form-control" required>
+                        <option value="" disabled selected>Selecione a Rua</option>
+                    </select>
+                </div>
+            </div>
+             <div class="form-group">
+                <label for="cidade">Cidade *</label>
+                <input type="text" class="form-control" id="cidade" name="cidade" value="Americana/SP" required readonly>
+            </div>
+            <div class="form-group">
+                <label for="contato">Seu Contato (Telefone/Email) *</label>
+                <input type="text" class="form-control" id="contato" name="contato" required placeholder="Ex: (19) 99999-9999 ou email@example.com">
+            </div>
+            <div class="form-group">
+                <label for="comentario">Características distintivas, informações adicionais</label>
+                <textarea class="form-control" id="comentario" name="comentario" rows="4" placeholder="Descreva cor, porte, se tem coleira, comportamento, etc."></textarea>
+            </div>
+            <div class="form-group">
+                <label for="foto_pet">Foto do PET (PNG, JPG, JPEG) *</label>
+                <div class="custom-file">
+                    <input type="file" class="custom-file-input" id="foto_pet" name="foto_pet" accept=".png,.jpg,.jpeg" required>
+                    <label class="custom-file-label" for="foto_pet">Escolher arquivo...</label>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-success btn-block mt-4">Submeter Cadastro</button>
+        </form>
     </div>
-    <div class="form-group">
-        <label for="especie">Espécie *</label>
-        <input type="text" class="form-control" id="especie" name="especie" required placeholder="Ex: Cachorro, Gato">
-    </div>
-    <div class="form-row">
-        <div class="form-group col-md-6">
-            <label for="bairro">Bairro onde foi visto por último *</label>
-            <select id="bairro" name="bairro" class="form-control" required>
-                <option value="">Selecione o Bairro</option>
-                {% for b in bairros %}
-                <option value="{{ b }}">{{ b }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="form-group col-md-6">
-            <label for="rua">Rua onde foi visto por último *</label>
-            <select id="rua" name="rua" class="form-control" required>
-                <option value="">Selecione a Rua (após escolher o bairro)</option>
-            </select>
-        </div>
-    </div>
-     <div class="form-group">
-        <label for="cidade">Cidade *</label>
-        <input type="text" class="form-control" id="cidade" name="cidade" value="Americana/SP" required readonly>
-    </div>
-    <div class="form-group">
-        <label for="contato">Seu Contato (Telefone/Email) *</label>
-        <input type="text" class="form-control" id="contato" name="contato" required>
-    </div>
-    <div class="form-group">
-        <label for="comentario">Características distintivas, informações adicionais</label>
-        <textarea class="form-control" id="comentario" name="comentario" rows="3"></textarea>
-    </div>
-    <div class="form-group">
-        <label for="foto_pet">Foto do PET (PNG, JPG, JPEG) *</label>
-        <input type="file" class="form-control-file" id="foto_pet" name="foto_pet" accept=".png,.jpg,.jpeg" required>
-    </div>
-    <button type="submit" class="btn btn-success">Submeter Cadastro</button>
-</form>
+</div>
 {% endblock %}
 
 {% block scripts_extra %}
+{{ super() }}
 <script>
 $(document).ready(function() {
+    // Script para mostrar o nome do arquivo no input customizado
+    $('.custom-file-input').on('change', function() {
+        let fileName = $(this).val().split('\\').pop();
+        $(this).next('.custom-file-label').addClass("selected").html(fileName || "Escolher arquivo...");
+    });
+
+    // Script existente para buscar ruas
     $('#bairro').change(function() {
         var bairroSelecionado = $(this).val();
         var ruaSelect = $('#rua');
-        ruaSelect.empty().append('<option value="">Carregando ruas...</option>');
+        ruaSelect.empty().append('<option value="" disabled selected>Carregando...</option>');
 
         if (bairroSelecionado) {
             $.getJSON("{{ url_for('buscar_ruas_por_bairro') }}", { bairro: bairroSelecionado }, function(ruas) {
-                ruaSelect.empty().append('<option value="">Selecione a Rua</option>');
+                ruaSelect.empty().append('<option value="" disabled selected>Selecione a Rua</option>');
                 if (ruas.length > 0) {
                     $.each(ruas, function(index, rua) {
                         ruaSelect.append($('<option></option>').attr('value', rua).text(rua));
                     });
                 } else {
-                     ruaSelect.empty().append('<option value="">Nenhuma rua encontrada para este bairro</option>');
+                     ruaSelect.empty().append('<option value="" disabled>Nenhuma rua para este bairro</option>');
                 }
             }).fail(function() {
-                 ruaSelect.empty().append('<option value="">Erro ao carregar ruas</option>');
+                 ruaSelect.empty().append('<option value="" disabled>Erro ao carregar ruas</option>');
             });
         } else {
-            ruaSelect.empty().append('<option value="">Selecione a Rua (após escolher o bairro)</option>');
+            ruaSelect.empty().append('<option value="" disabled selected>Selecione a Rua</option>');
         }
     });
 });

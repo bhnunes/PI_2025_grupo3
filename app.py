@@ -9,7 +9,6 @@ import folium # Para o mapa
 from werkzeug.utils import secure_filename # Para segurança no upload de arquivos
 
 # Para o dashboard (se mantiver a lógica do exemplo)
-from wordcloud import WordCloud
 import base64
 from io import BytesIO
 import random

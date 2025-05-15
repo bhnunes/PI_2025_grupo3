@@ -6,7 +6,7 @@ $(document).ready(function() {
     // Exemplo: tooltip do bootstrap
     // $('[data-toggle="tooltip"]').tooltip();
 
-    console.log("PetEncontra JS carregado.");
+    console.log("BuscaPet JS carregado.");
 });
 
 // Se você mover a lógica de encerrarBusca para cá:

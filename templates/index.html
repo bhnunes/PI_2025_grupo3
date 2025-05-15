@@ -1,34 +1,42 @@
 {% extends "base.html" %}
 
-{% block title %}Principal - Animais Perdidos{% endblock %}
+{% block title %}Principal - BuscaPet{% endblock %}
 
 {% block head_extra %}
     {{ super() }}
-    <!-- Leaflet CSS para ícones customizados do Folium, se necessário -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <style>
-        .folium-map { height: 60vh !important; min-height: 400px; } /* Ajuste a altura conforme necessário */
+        /* Estilos específicos do mapa já estão no styles.css global */
+        .page-header-custom .lead {
+            font-size: 1.2rem;
+            color: #7f8c8d; /* Um cinza mais suave */
+        }
     </style>
 {% endblock %}
 
 {% block content %}
-<div class="text-center mb-4">
-    <h1>Plataforma PetEncontra</h1>
-    <p class="lead">Ajudando a reunir pets perdidos com seus tutores.</p>
+<div class="text-center page-header-custom">
+    <h1 class="site-title">
+        BuscaPet
+        <img src="{{ url_for('static', filename='img/BuscaPet.png') }}" alt="Patinhas" class="paw-icon">
+    </h1>
+    <p class="lead">Ajudando a reunir pets perdidos com seus tutores na sua comunidade.</p>
 </div>
 
 <div id="map-container">
     {% if mapa_html %}
         {{ mapa_html|safe }}
     {% else %}
-        <p class="text-center">Não foi possível carregar o mapa. Verifique a conexão ou tente mais tarde.</p>
+        <div class="alert alert-warning text-center" role="alert">
+            Não foi possível carregar o mapa. Verifique a conexão ou tente mais tarde.
+        </div>
     {% endif %}
 </div>
 {% endblock %}
 
 {% block scripts_extra %}
-<script type="text/javascript"> // Adicionado type="text/javascript" por clareza
+<script type="text/javascript">
     // Garantir que isso seja executado e defina a função no escopo global da janela principal
     window.encerrarBuscaPet = function(petId) { // Renomeado para evitar qualquer conflito residual
         console.log("CHAMADA DE window.parent.encerrarBuscaPet - PET ID:", petId);
@@ -58,5 +66,5 @@
             });
         }
     };
-  </script>
-  {% endblock %}
+</script>
+{% endblock %}
