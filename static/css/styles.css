@@ -107,17 +107,41 @@ img.title-side-image { /* Imagem ao lado do título principal */
     box-shadow: 0 3px 10px rgba(0,0,0,0.2);
 }
 
-.page-header-custom .lead { /* Lead text abaixo do título */
-    color: #4A5568;
-    font-size: 1.25rem;
-    font-weight: 400;
-    max-width: 700px;
+/* MODIFICAÇÕES AQUI ABAIXO PARA O TEXTO LEAD */
+.page-header-custom .lead {
+    color: #6A7588; /* Tom de cinza um pouco mais escuro e azulado */
+    font-size: 1.35rem; /* Um pouco maior para mais impacto */
+    font-weight: 400; /* Mantido, ou 300 para mais leveza se a fonte Nunito suportar bem */
+    max-width: 750px; /* Aumentar um pouco a largura máxima */
     margin-left: auto;
     margin-right: auto;
-    width: 100%; /* Para ocupar a largura e ficar abaixo */
-    margin-top: 15px; /* Espaçamento acima do lead */
-    line-height: 1.7;
+    width: 100%;
+    margin-top: 20px; /* Mais espaço acima do lead */
+    line-height: 1.75; /* Melhorar espaçamento entre linhas */
+    font-style: italic; /* <<<< NOVO: Adicionar um toque de itálico */
+    padding: 10px 0; /* Adicionar um pouco de padding vertical */
+    /* Opcional: uma borda sutil ou um fundo muito leve se quiser destacar mais */
+    border-top: 1px dashed #D1D5DB;
+    border-bottom: 1px dashed #D1D5DB;
+    background-color: rgba(74, 144, 226, 0.03); /* Fundo MUITO sutil com a cor primária */
+    /* As seguintes propriedades podem ser adicionadas para melhor alinhamento com o GIF inline */
+    display: flex; /* Transforma o parágrafo em um flex container */
+    justify-content: center; /* Centraliza o conteúdo (texto + gif) */
+    align-items: center; /* Alinha verticalmente o texto e o gif */
+    flex-wrap: wrap; /* Permite quebra se o conteúdo for muito longo */
 }
+
+.dancing-cat-gif {
+    height: 50px;   /* <<<< AUMENTADO: Altura desejada para o GIF */
+    width: 50px;    /* <<<< AUMENTADO: Largura igual à altura para um círculo perfeito */
+    border-radius: 50%; /* <<<< ADICIONADO: Para fazer o recorte circular */
+    object-fit: cover;  /* <<<< ADICIONADO: Garante que o GIF preencha o círculo, cortando o excesso se necessário */
+    margin-left: 12px;  /* Aumentar um pouco o espaço se o GIF for maior */
+    border: 2px solid rgba(221, 107, 32, 0.3); /* Borda sutil opcional na cor do título */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1); /* Sombra sutil opcional */
+    /* vertical-align: middle; -- Não é mais tão crucial se .lead é flex e usa align-items: center */
+}
+/* FIM DAS MODIFICAÇÕES PARA O TEXTO LEAD */
 
 
 /* --- Mapa --- */
