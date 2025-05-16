@@ -1,259 +1,331 @@
 /* static/css/styles.css */
 
 /* --- Configurações Globais e Fontes --- */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Pacifico&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&family=Pacifico&display=swap');
 
 body {
-    font-family: 'Poppins', sans-serif; /* Fonte mais moderna */
-    background-color: #f9f9f9; /* Um cinza bem claro para o fundo geral */
-    color: #333;
-    padding-top: 70px; /* Ajuste para navbar fixa */
+    font-family: 'Nunito', sans-serif;
+    background-color: #eef1f5;
+    color: #4A5568;
+    padding-top: 80px; /* Ajustado para navbar maior */
     padding-bottom: 80px; /* Espaço para o rodapé */
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    line-height: 1.6;
 }
 
 .container, .container-fluid {
-    flex-grow: 1;
+    flex-grow: 1; /* Para o main content ocupar o espaço disponível */
+}
+
+main.flex-shrink-0 { /* Garante que o main não encolha demais */
+    flex-shrink: 0;
 }
 
 h1, h2, h3, h4, h5, h6 {
-    font-weight: 600; /* Títulos um pouco mais fortes */
-    color: #2c3e50; /* Um azul escuro/cinza para títulos */
-}
-
-h1.site-title { /* Título principal da plataforma */
-    font-family: 'Pacifico', cursive; /* Fonte divertida para o título principal */
-    color: #e74c3c; /* Um tom de vermelho/laranja */
-    font-size: 2.8rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.paw-icon { /* Para adicionar patinhas */
-    width: 30px;
-    height: auto;
-    margin-left: 15px;
-    opacity: 0.8;
+    font-weight: 700;
+    color: #2D3748;
 }
 
 /* --- Navbar --- */
 .navbar {
-    background-color: #3498db !important; /* Um azul mais vibrante */
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    padding-top: 0.8rem;
+    background: linear-gradient(90deg, #4A90E2 0%, #50E3C2 100%) !important;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+    padding-top: 0.8rem; /* Reduzido um pouco para não ficar tão alto com fontes maiores */
     padding-bottom: 0.8rem;
+    border-bottom: 2px solid rgba(255,255,255,0.2);
 }
 
 .navbar-brand {
     font-family: 'Pacifico', cursive;
-    font-size: 1.8rem !important;
+    font-size: 1.9rem !important; /* Ajustado para equilíbrio */
     color: #fff !important;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
 }
-.navbar-brand img {
-    margin-right: 8px;
-    filter: brightness(0) invert(1); /* Deixa o logo branco se for escuro */
+.navbar-brand img.logo-navbar { /* Classe específica para o logo na navbar */
+    margin-right: 12px;
+    width: 38px; /* Tamanho do logo na navbar */
+    height: 38px;
+    object-fit: contain;
 }
 
 .navbar-nav .nav-link {
-    color: #ecf0f1 !important; /* Cor clara para os links */
-    font-weight: 400;
-    padding: 0.5rem 1rem;
-    transition: color 0.2s ease-in-out;
+    color: #f0f0f0 !important;
+    font-weight: 600;
+    font-size: 1.15rem; /* Tamanho aumentado da fonte dos links de navegação */
+    padding: 0.7rem 1.3rem; /* Padding ajustado para acomodar texto maior */
+    border-radius: 5px;
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
 }
 .navbar-nav .nav-link:hover,
 .navbar-nav .nav-item.active .nav-link {
     color: #fff !important;
-    font-weight: 600;
+    background-color: rgba(255,255,255,0.15);
+}
+.navbar-nav .nav-link i {
+    margin-right: 10px;
+    font-size: 1.1em;  /* Tamanho do ícone relativo à fonte do link */
+}
+
+/* --- Página Principal - Título e Lead --- */
+.page-header-custom {
+    background-color: transparent;
+    padding: 40px 15px 20px 15px; /* Ajustado padding inferior */
+    margin-bottom: 25px; /* Ajustado margem inferior */
+    border-radius: 0;
+    box-shadow: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap; /* Permitir quebra se necessário */
+}
+
+h1.site-title { /* Título principal (ex: "BuscaPet") */
+    font-family: 'Pacifico', cursive;
+    color: #DD6B20; /* Laranja queimado */
+    font-size: 3.8rem; /* Tamanho aumentado */
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    margin: 0 15px 0 0; /* Margem à direita para separar da imagem */
+    line-height: 1; /* Ajustar altura da linha */
+}
+
+.title-image-container { /* Container para a imagem ao lado do título */
+    margin-left: 0; /* Removido, pois o flex já cuida do espaçamento se h1 tiver margem */
+}
+
+img.title-side-image { /* Imagem ao lado do título principal */
+    width: 70px;  /* Tamanho ajustado */
+    height: 70px; /* Manter proporção para círculo */
+    border-radius: 50%; /* Recorte circular */
+    object-fit: cover; /* Garante que a imagem preencha o círculo */
+    border: 3px solid rgba(255,255,255,0.7); /* Borda branca sutil */
+    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+}
+
+.page-header-custom .lead { /* Lead text abaixo do título */
+    color: #4A5568;
+    font-size: 1.25rem;
+    font-weight: 400;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%; /* Para ocupar a largura e ficar abaixo */
+    margin-top: 15px; /* Espaçamento acima do lead */
+    line-height: 1.7;
 }
 
 
-/* --- Rodapé --- */
-
-.footer {
-    background-color: #2D3748 !important;
-    color: #A0AEC0;
-    padding: 1.5rem 0; /* Ajustei o padding vertical um pouco se quiser mais compacto */
-    border-top: 4px solid #4A90E2;
-    width: 100%;
-    margin-top: auto;
+/* --- Mapa --- */
+#map-container {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    margin-bottom: 40px;
 }
-.footer p { /* Estilo para o parágrafo do copyright */
-    margin-bottom: 0.5rem; /* Espaçamento entre o texto e o logo abaixo */
-    font-size: 0.95rem; /* Tamanho da fonte do copyright */
-    color: #CBD5E0; /* Cor do texto do copyright */
-}
-.footer a {
-    color: #CBD5E0 !important;
-    display: inline-block; /* Para o link do GitHub se comportar bem */
-}
-.footer a:hover {
-    color: #fff !important;
-}
-.footer img {
-    /* width já está inline no HTML, mas pode definir max-width aqui se preferir */
-    opacity: 0.8;
-    transition: opacity 0.2s ease-in-out;
-}
-.footer img:hover {
-    opacity: 1;
-}
-
-/* --- Botões --- */
-.btn-success {
-    background-color: #2ecc71; /* Verde mais vivo */
-    border-color: #27ae60;
-    font-weight: 600;
-    padding: 0.6rem 1.2rem;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
-}
-.btn-success:hover {
-    background-color: #27ae60;
-    border-color: #27ae60;
-}
-
-.btn-primary {
-    background-color: #3498db; /* Consistente com a navbar */
-    border-color: #2980b9;
-    font-weight: 600;
-    padding: 0.6rem 1.2rem;
-}
-.btn-primary:hover {
-    background-color: #2980b9;
-    border-color: #2980b9;
-}
-
-.btn-danger { /* Para cards no dashboard */
-    background-color: #e74c3c;
-    border-color: #c0392b;
+.folium-map {
+    height: 65vh !important; /* Ajustado para não ser excessivamente alto em telas menores */
+    min-height: 480px;
 }
 
 /* --- Formulários --- */
 form {
     background-color: #ffffff;
-    padding: 25px 30px;
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    padding: 35px 40px;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.12);
     margin-top: 20px;
 }
 form label {
     font-weight: 600;
-    color: #555;
-    margin-bottom: 0.3rem;
+    color: #4A5568;
+    margin-bottom: 0.5rem;
 }
-.form-control, .form-control-file {
-    border-radius: 5px;
-    border: 1px solid #ddd;
-    padding: 0.75rem;
+.form-control, .custom-file-label {
+    border-radius: 8px;
+    border: 1px solid #CBD5E0;
+    padding: 0.85rem 1rem;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
+.custom-file-input:focus ~ .custom-file-label {
+    border-color: #4A90E2;
+    box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.25);
+}
 .form-control:focus {
-    border-color: #3498db;
-    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+    border-color: #4A90E2;
+    box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.25);
+}
+.custom-file-label::after {
+    background-color: #4A90E2;
+    color: white;
+    border-left: 1px solid #357ABD;
+    border-radius: 0 0.5rem 0.5rem 0;
 }
 textarea.form-control {
     min-height: 100px;
 }
 
-/* --- Cards (usados no Dashboard) --- */
-.card {
-    border: none;
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-    margin-bottom: 20px;
-    overflow: hidden; /* Para garantir que o header com bg se ajuste ao border-radius */
-}
-.card-header {
+/* --- Botões --- */
+.btn {
     font-weight: 600;
-    font-size: 1.1rem;
-    /* As cores de fundo dos cards do dashboard serão mantidas (bg-danger, bg-success) */
+    padding: 0.75rem 1.5rem;
+    border-radius: 25px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
-.card-title { /* Para os números grandes no dashboard */
-    font-size: 2.5rem !important;
-    font-weight: 700;
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
 }
-.card-body .img-fluid { /* Para gráficos no dashboard */
-    max-width: 100%;
-    height: auto;
-    border-radius: 4px; /* Pequeno arredondamento se a imagem não preencher */
+.btn-success {
+    background-color: #38A169;
+    border-color: #2F855A;
+    color: white !important; /* Garante que o texto seja branco */
+}
+.btn-success:hover {
+    background-color: #2F855A;
+    border-color: #2F855A;
+}
+.btn-primary {
+    background-color: #4A90E2;
+    border-color: #357ABD;
+    color: white !important;
+}
+.btn-primary:hover {
+    background-color: #357ABD;
+    border-color: #357ABD;
+}
+.btn-danger {
+    background-color: #E53E3E;
+    border-color: #C53030;
+    color: white !important;
 }
 
-/* --- Mapa --- */
-#map-container {
-    border-radius: 8px;
-    overflow: hidden; /* Para o mapa respeitar o border-radius */
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    margin-bottom: 30px;
+/* --- Cards (Dashboard e outros) --- */
+.card {
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.07);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    margin-bottom: 25px; /* Espaçamento consistente */
+    overflow: hidden;
 }
-.folium-map {
-    height: 65vh !important; /* Um pouco mais de altura */
-    min-height: 450px;
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+.card-header {
+    background-color: #f8fafc; /* Fundo muito claro para o header do card */
+    border-bottom: 1px solid #E2E8F0;
+    font-size: 1.15rem;
+    font-weight: 600; /* Adicionado para destaque */
+    color: #2D3748;
+    padding: 0.9rem 1.25rem; /* Padding ajustado */
+}
+.card.text-white .card-header { /* Para cards com bg-success, bg-danger */
+    color: white;
+    border-bottom: 1px solid rgba(255,255,255,0.2); /* Borda sutil para cards coloridos */
+}
+.card-title { /* Números grandes no dashboard */
+    font-size: 2.8rem !important;
+    font-weight: 700;
+}
+.card-body .img-fluid {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
 }
 
 /* --- Alertas --- */
 .alert {
     border-left-width: 5px;
-    border-radius: 4px;
-    padding: 1rem 1.25rem;
-}
-.alert-success {
-    border-left-color: #2ecc71;
-}
-.alert-danger {
-    border-left-color: #e74c3c;
-}
-.alert-warning {
-    border-left-color: #f39c12;
-}
-.alert-info {
-    border-left-color: #3498db;
-}
-
-/* --- Página Principal - Título e Lead --- */
-.page-header-custom {
-    background-color: #ffffff;
-    padding: 30px 15px;
-    margin-bottom: 30px;
     border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    padding: 1.1rem 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    font-size: 0.95rem;
 }
-.page-header-custom .lead {
-    color: #555;
-    font-size: 1.15rem;
+.alert-success { border-left-color: #38A169; }
+.alert-danger { border-left-color: #E53E3E; }
+.alert-warning { border-left-color: #DD6B20; } /* Laranja do título */
+.alert-info { border-left-color: #4A90E2; }
+
+/* --- Rodapé --- */
+.footer {
+    background-color: #2D3748 !important;
+    color: #A0AEC0;
+    padding: 1.5rem 0;
+    border-top: 4px solid #4A90E2;
+    width: 100%;
+    margin-top: auto; /* Mantém no rodapé da página */
+}
+.footer p {
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+    color: #CBD5E0;
+}
+.footer a {
+    color: #CBD5E0 !important;
+    display: inline-block;
+}
+.footer a:hover {
+    color: #fff !important;
+}
+.footer img {
+    opacity: 0.8;
+    transition: opacity 0.2s ease-in-out;
+    /* O width já está no HTML (28px) */
+}
+.footer img:hover {
+    opacity: 1;
 }
 
-/* --- Dashboard Específico --- */
-.dashboard-stat-card .card-body {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-.dashboard-stat-card .card-header {
-    text-align: center;
-}
-
-/* Ajuste para o popup do Folium, se possível (pode ser limitado) */
+/* Popup do Folium */
 .folium-popup .leaflet-popup-content-wrapper {
-    border-radius: 6px !important;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+    background-color: #fff !important;
 }
 .folium-popup .leaflet-popup-content {
-    font-family: 'Poppins', sans-serif !important;
-    margin: 10px 15px !important; /* Mais padding interno */
+    font-family: 'Nunito', sans-serif !important;
+    margin: 12px 18px !important;
+    color: #4A5568;
+    min-width: 220px; /* Largura mínima para o conteúdo não ficar espremido */
 }
 .folium-popup h4 {
-    font-family: 'Poppins', sans-serif !important;
-    font-weight: 600 !important;
-    color: #3498db !important;
-    margin-bottom: 8px !important;
+    font-family: 'Nunito', sans-serif !important;
+    font-weight: 700 !important;
+    color: #DD6B20 !important;
+    margin-bottom: 10px !important;
+    font-size: 1.2em !important;
 }
 .folium-popup b {
-    color: #555;
+    color: #2D3748;
+    font-weight: 600;
 }
 .folium-popup img {
-    border-radius: 4px;
-    margin-bottom: 8px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    border: 1px solid #eee;
+    max-width: 100%; /* Garante que a imagem não ultrapasse o popup */
+    height: auto;
+}
+.folium-popup .btn-success {
+    background-color: #38A169 !important;
+    border-color: #2F855A !important;
+    color: white !important;
+    padding: 5px 12px !important; /* Padding ajustado */
+    font-size: 0.9em !important;
+    border-radius: 15px !important;
+    text-transform: none !important; /* Remove uppercase se não quiser no popup */
+    letter-spacing: normal !important; /* Remove letter-spacing se não quiser no popup */
+}
+.folium-popup .btn-success:hover {
+    background-color: #2F855A !important;
+    border-color: #276749 !important;
 }
