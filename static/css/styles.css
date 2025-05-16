@@ -193,6 +193,50 @@ textarea.form-control {
     min-height: 100px;
 }
 
+/* --- Estilos para Títulos de Seção com Imagem (ex: Cadastrar PET) --- */
+.page-title-container {
+    display: flex;         /* Alinha imagem e texto na horizontal */
+    align-items: center;   /* Alinha verticalmente ao centro */
+    justify-content: center; /* Centraliza o conjunto (imagem + texto) */
+    /* margin-bottom: 2.5rem; -- Ajustado no HTML com mb-5 */
+    /* padding-top: 1rem;    -- Ajustado no HTML com mt-3 */
+}
+
+img.title-prefix-image {
+    width: 80px;  /* Tamanho da imagem - ajuste conforme necessário */
+    height: 80px; /* Manter quadrado para círculo perfeito */
+    border-radius: 50%; /* Bordas redondas */
+    object-fit: cover;  /* Garante que a imagem preencha o círculo */
+    margin-right: 20px; /* Espaço entre a imagem e o texto do título */
+    border: 3px solid #fff; /* Borda branca para destacar */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15); /* Sombra sutil */
+}
+
+h2.page-section-title {
+    font-size: 2.2rem; /* Tamanho da fonte do título da seção */
+    font-weight: 700;
+    color: #2D3748; /* Cor consistente com outros títulos h2 */
+    margin-bottom: 0; /* Remove margem inferior padrão do h2, pois .page-title-container já tem */
+    line-height: 1.2; /* Ajustar altura da linha se necessário */
+}
+
+/* Ajuste responsivo opcional para o título da página de cadastro */
+@media (max-width: 576px) {
+    .page-title-container {
+        flex-direction: column; /* Imagem acima do texto em telas pequenas */
+        text-align: center;
+    }
+    img.title-prefix-image {
+        margin-right: 0;
+        margin-bottom: 15px; /* Espaço entre imagem e texto quando empilhados */
+        width: 70px; /* Pode reduzir um pouco em telas pequenas */
+        height: 70px;
+    }
+    h2.page-section-title {
+        font-size: 1.8rem; /* Reduzir um pouco o título em telas pequenas */
+    }
+}
+
 /* --- Botões --- */
 .btn {
     font-weight: 600;
@@ -252,18 +296,44 @@ textarea.form-control {
     color: #2D3748;
     padding: 0.9rem 1.25rem; /* Padding ajustado */
 }
-.card.text-white .card-header { /* Para cards com bg-success, bg-danger */
-    color: white;
-    border-bottom: 1px solid rgba(255,255,255,0.2); /* Borda sutil para cards coloridos */
+
+/* Estilos específicos para cards de estatísticas no Dashboard */
+.dashboard-stat-card .card-header {
+    text-align: center; /* Centraliza o texto APENAS nos headers dos cards de estatística */
 }
+
+/* CORREÇÃO: Garante que o texto do header seja branco em cards com fundo colorido */
+.card.text-white .card-header, 
+.card.bg-danger .card-header, 
+.card.bg-success .card-header {
+    color: black !important; /* Força a cor branca para o texto */
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    /* background-color: transparent; -- Opcional: se quiser que o header use o bg do card */
+}
+/* Se o background-color: transparent acima for usado,
+   e você quiser que o texto seja centralizado também nesses cards:
+.card.text-white .card-header,
+.card.bg-danger .card-header,
+.card.bg-success .card-header {
+    text-align: center;
+}
+*/
+
 .card-title { /* Números grandes no dashboard */
     font-size: 2.8rem !important;
     font-weight: 700;
+    text-align: center; /* Centraliza os números grandes */
 }
+
 .card-body .img-fluid {
     max-width: 100%;
     height: auto;
     border-radius: 4px;
+}
+
+/* CORREÇÃO: Para centralizar o header do card "Visão Geral" */
+.card-visao-geral .card-header { /* Adicione esta classe ao card específico no HTML */
+    text-align: center;
 }
 
 /* --- Alertas --- */
