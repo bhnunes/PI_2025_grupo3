@@ -90,7 +90,8 @@ def principal():
             # Buscar pets não resolvidos
             sql = """
                 SELECT ID, NOME_PET, ESPECIE, RUA, BAIRRO, CIDADE, CONTATO, COMENTARIO, 
-                       THUMBNAIL_PATH, LATITUDE, LONGITUDE, CREATED_AT, FOTO_PATH
+                       THUMBNAIL_PATH, LATITUDE, LONGITUDE, CREATED_AT, FOTO_PATH,
+                       STATUS_PET  -- <<<< ADICIONADA NOVA COLUNA
                 FROM USERINPUT 
                 WHERE RESOLVIDO = 0 OR RESOLVIDO IS NULL 
                 ORDER BY CREATED_AT DESC
@@ -109,9 +110,14 @@ def principal():
                 if pet['LATITUDE'] and pet['LONGITUDE'] and pet['THUMBNAIL_PATH']:
 
                     encerrar_url = url_for('confirmar_encerrar_busca', pet_id=pet['ID'], _external=True) # _external pode ajudar com iframes
+                    status_texto = pet.get('STATUS_PET', 'Status não informado') # Pega o status do pet
+                    # Formatar o texto "Visto por último em:"
+                    local_visto_texto = f"<b>Visto por último em:</b>"
                     popup_html = f"""
                         <h4>{pet.get('NOME_PET', 'Sem nome')} ({pet['ESPECIE']})</h4>
+                        <p style="font-weight: bold; color: #007bff; margin-bottom: 5px;">{status_texto}</p>
                         <img src='{url_for('static', filename=pet['FOTO_PATH'].replace('static/', '', 1))}' width='150'><br>
+                        {local_visto_texto}<br>
                         <b>Local:</b> {pet['RUA']}, {pet['BAIRRO']}, {pet['CIDADE']}<br>
                         <b>Contato:</b> {pet['CONTATO']}<br>
                         <b>Info:</b> {pet['COMENTARIO'][:100] + '...' if pet['COMENTARIO'] and len(pet['COMENTARIO']) > 100 else pet['COMENTARIO']}<br>
@@ -204,6 +210,7 @@ def cadastrar_pet():
         cidade = request.form.get('cidade', 'Americana/SP') # Default se não enviado
         contato = request.form.get('contato')
         comentario = request.form.get('comentario')
+        status_pet = request.form.get('status_pet', 'Perdi meu PET') # <<<< NOVO CAMPO
         
         if 'foto_pet' not in request.files:
             flash('Nenhum arquivo de foto enviado!', 'danger')
@@ -261,8 +268,9 @@ def cadastrar_pet():
                             sql_insert = """
                                 INSERT INTO USERINPUT 
                                 (NOME_PET, ESPECIE, RUA, BAIRRO, CIDADE, CONTATO, COMENTARIO, 
-                                 FOTO_PATH, THUMBNAIL_PATH, CREATED_AT, RESOLVIDO, LATITUDE, LONGITUDE)
-                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0, %s, %s)
+                                 FOTO_PATH, THUMBNAIL_PATH, CREATED_AT, RESOLVIDO, LATITUDE, LONGITUDE,
+                                 STATUS_PET) -- <<<< ADICIONADA NOVA COLUNA
+                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0, %s, %s, %s) -- <<<< ADICIONADO NOVO PLACEHOLDER
                             """
                             # Caminhos relativos a partir de 'static' para URL_FOR
                             db_foto_path = os.path.join('uploads', 'imagens_pet', filename)
@@ -270,7 +278,8 @@ def cadastrar_pet():
 
                             cursor_insert.execute(sql_insert, 
                                                 (nome_pet, especie, rua, bairro, cidade, contato, comentario,
-                                                db_foto_path, db_thumbnail_path, datetime.now(), lat, lon))
+                                                db_foto_path, db_thumbnail_path, datetime.now(), lat, lon,
+                                                status_pet)) # <<<< ADICIONADO NOVO VALOR
                             conn.commit()
                             flash('Pet cadastrado com sucesso!', 'success')
                             return redirect(url_for('principal'))
