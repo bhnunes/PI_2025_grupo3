@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}BuscaPet{% endblock %}</title>
+    <title>{% block title %}🐾BuscaPet🐱{% endblock %}</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -59,13 +59,15 @@
 
     <footer class="footer">
         <div class="container text-center">
-            <span class="text-muted">
-                © {{ current_year }} BuscaPet - UNIVESP.
+            <p class="mb-1"> {# Adicionado parágrafo e margem inferior pequena #}
+                © {{ current_year }} 🐾BuscaPet🐱 - UNIVESP.
+            </p>
+            <div> {# Nova div para o logo do GitHub ficar abaixo #}
                 <a href="https://github.com/bhnunes/PI_2025_grupo3" target="_blank" title="Projeto no GitHub">
-                    <img src="{{ url_for('static', filename='img/github_logo.png') }}" alt="GitHub" width="22">
+                    <img src="{{ url_for('static', filename='img/github_logo_claro.png') }}" alt="GitHub" width="28"> {# Tamanho aumentado e usando a versão clara #}
                 </a>
-                <img src="{{ url_for('static', filename='img/univesp_logo.png') }}" alt="UNIVESP" width="22" title="UNIVESP">
-            </span>
+            </div>
+            {# Imagem da UNIVESP removida, texto "UNIVESP" já está acima #}
         </div>
     </footer>
 

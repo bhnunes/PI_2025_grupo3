@@ -71,23 +71,30 @@ h1.site-title { /* Título principal da plataforma */
 
 
 /* --- Rodapé --- */
+
 .footer {
-    background-color: #34495e !important; /* Um cinza azulado escuro */
-    color: #ecf0f1;
-    padding: 1.5rem 0;
-    border-top: 3px solid #3498db; /* Linha de destaque com a cor da navbar */
+    background-color: #2D3748 !important;
+    color: #A0AEC0;
+    padding: 1.5rem 0; /* Ajustei o padding vertical um pouco se quiser mais compacto */
+    border-top: 4px solid #4A90E2;
     width: 100%;
-    margin-top: auto; /* Empurra o rodapé para baixo */
+    margin-top: auto;
 }
-.footer a, .footer .text-muted {
-    color: #bdc3c7 !important;
+.footer p { /* Estilo para o parágrafo do copyright */
+    margin-bottom: 0.5rem; /* Espaçamento entre o texto e o logo abaixo */
+    font-size: 0.95rem; /* Tamanho da fonte do copyright */
+    color: #CBD5E0; /* Cor do texto do copyright */
+}
+.footer a {
+    color: #CBD5E0 !important;
+    display: inline-block; /* Para o link do GitHub se comportar bem */
 }
 .footer a:hover {
     color: #fff !important;
 }
 .footer img {
-    margin-left: 8px;
-    opacity: 0.7;
+    /* width já está inline no HTML, mas pode definir max-width aqui se preferir */
+    opacity: 0.8;
     transition: opacity 0.2s ease-in-out;
 }
 .footer img:hover {
