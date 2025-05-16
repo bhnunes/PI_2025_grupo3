@@ -11,7 +11,6 @@ from werkzeug.utils import secure_filename # Para segurança no upload de arquiv
 # Para o dashboard (se mantiver a lógica do exemplo)
 import base64
 from io import BytesIO
-import random
 import matplotlib
 matplotlib.use('Agg') # Define o backend como 'Agg' para não precisar de GUI
 import matplotlib.pyplot as plt
@@ -362,18 +361,6 @@ def gerar_dados_dashboard_pets():
                 ORDER BY CREATED_AT DESC LIMIT 5
             """)
             latest_cases = cursor.fetchall()
-
-        if comentarios_data:
-            sem_dados = False
-            text = " ".join([item['COMENTARIO'] for item in comentarios_data])
-            if text.strip(): # Verifica se o texto não está vazio
-                wordcloud = WordCloud(background_color="white", width=400, height=250, collocations=False).generate(text)
-                image_bytes = BytesIO()
-                wordcloud.to_image().save(image_bytes, format='PNG')
-                image_bytes.seek(0)
-                wordcloud_image = base64.b64encode(image_bytes.getvalue()).decode()
-            else:
-                wordcloud_image = None # Ou uma imagem placeholder
         
         # Gráfico de Estatísticas (Ex: Perdidos vs Encontrados)
         if total_perdidos > 0 or total_encontrados > 0:
