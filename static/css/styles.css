@@ -443,25 +443,35 @@ textarea.form-control {
 }
 
 
-.pet-status-detail { /* Badge para "Perdi meu PET" / "Encontrei um PET" */
-    font-size: 1.1rem !important; /* Usar !important se necessário para sobrescrever Bootstrap */
-    padding: 0.6rem 1.2rem !important;
+.pet-status-detail { /* Estilo base para o badge/texto de status na página de detalhes */
+    font-size: 1.2rem !important; /* Aumentar um pouco */
+    padding: 0.6rem 1.3rem !important; /* Mais padding */
     display: inline-block;
-    margin-bottom: 20px;
+    margin-bottom: 20px; /* Mais espaço abaixo */
     font-weight: 700 !important;
-    color: white !important;
-    border-radius: 25px !important; /* Consistente com botões */
-    /* Cores de fundo serão definidas por classes Bootstrap .badge-* no HTML, se necessário */
-    /* Para este caso, vamos usar .badge-info */
+    color: white !important; /* Texto sempre branco */
+    border-radius: 25px !important;
+    text-align: center;
+    width: 100%; /* Para ocupar a largura se for o único elemento na linha */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
+
 .badge-info { /* Reestilizando .badge-info para nosso propósito de status */
     background-color: #4A90E2 !important; /* Azul do tema */
 }
 /* Se quiser cores diferentes para status diferentes: */
 
-.status-perdi { background-color: #E53E3E !important; }
-.status-encontrei { background-color: #38A169 !important; }
-
+/* Cores específicas para os status */
+.status-perdi-text { 
+    background-color: #E53E3E !important; /* Vermelho */
+}
+.status-encontrado-text { 
+    background-color: #38A169 !important; /* Verde */
+}
+.status-resolvido-text { /* Opcional: se quiser uma cor diferente quando já resolvido */
+    background-color: #718096 !important; /* Cinza */
+    /* Ou pode usar a mesma cor de .status-encontrado-text */
+}
 
 .pet-detail-card .btn-success { /* Botão de encerrar busca */
     font-size: 1.05rem; /* Um pouco maior */
@@ -477,4 +487,17 @@ textarea.form-control {
 }
 .pet-detail-card .btn-outline-secondary i {
     margin-right: 5px;
+}
+
+/* Estilo para o botão "Encerrar Busca" na página de detalhes do PET */
+.btn-encerrar-busca-custom {
+    background-color: #5bc0de; /* Azul claro - Exemplo de cor (Bootstrap 'btn-info' color) */
+    border-color: #46b8da;     /* Borda correspondente */
+    color: white !important;   /* Garante que o texto seja branco */
+}
+
+.btn-encerrar-busca-custom:hover {
+    background-color: #31b0d5; /* Tom mais escuro no hover */
+    border-color: #269abc;
+    color: white !important;
 }

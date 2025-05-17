@@ -117,7 +117,47 @@ def principal():
                     
                     # URL para a página de detalhes do PET
                     detalhes_pet_url = url_for('detalhes_pet', pet_id=pet['ID'], _external=True)
-                    print(f"Detalhes do pet: {detalhes_pet_url}")  # Debug: Verificar a URL gerada
+                    # --- LÓGICA PARA O ÍCONE COLORIDO DO MARCADOR ---
+                    status_pet_mapa = pet.get('STATUS_PET', 'Perdi meu PET') # Default para consistência
+                    
+                    # Caminho do thumbnail para usar no ícone do mapa
+                    thumbnail_url_para_icone = '#'
+                    if pet.get('THUMBNAIL_PATH') and isinstance(pet['THUMBNAIL_PATH'], str):
+                        thumbnail_url_para_icone = url_for('static', filename=pet['THUMBNAIL_PATH'])
+
+                    icon_border_color = "red" # Default para 'Perdi meu PET'
+                    if status_pet_mapa == "Encontrei um PET":
+                        icon_border_color = "green"
+                    
+                    # HTML para o DivIcon (ícone customizado com borda colorida)
+                    icon_html = f"""
+                    <div style="
+                        width: 52px; /* Tamanho total do ícone (imagem + borda) */
+                        height: 52px;
+                        border-radius: 50%; /* Círculo */
+                        background-color: {icon_border_color}; /* Cor da borda/fundo */
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        box-shadow: 0px 0px 5px rgba(0,0,0,0.5);
+                        padding: 2px; /* Espaçamento para a borda */
+                        ">
+                        <img src="{thumbnail_url_para_icone}" 
+                            alt="T" 
+                            style="
+                                width: 48px; /* Tamanho da imagem interna */
+                                height: 48px; 
+                                border-radius: 50%; 
+                                object-fit: cover;
+                            ">
+                    </div>
+                    """
+                    custom_map_icon = folium.DivIcon(
+                        icon_size=(52, 52), # Tamanho do container do DivIcon
+                        icon_anchor=(26, 52), # Ponto de ancoragem (metade da largura, base)
+                        html=icon_html
+                    )
+                    # --- FIM DA LÓGICA DO ÍCONE COLORIDO ---
 
                     # HTML para o POPUP do marcador (que agora é um link para a página de detalhes)
                     # Vamos simplificar o popup para ser apenas um link claro
@@ -154,36 +194,27 @@ def principal():
                     </style>
                     """
 
-                    # APENAS PARA TESTE DO LINK BÁSICO
-                    popup_html_content_teste = f"""
-                    <div style="padding:10px; text-align:center;">
-                        <p>Pet: {pet.get('NOME_PET', 'N/A')}</p>
-                        <a href="{detalhes_pet_url}" target="_blank">Ver Detalhes TESTE</a>
-                    </div>
-                    """
-
                     full_popup_html = popup_styles + popup_html_content
                     
                     iframe = folium.IFrame(full_popup_html, width=220, height=110) # Iframe ajustado
-                    #iframe = folium.IFrame(popup_html_content_teste, width=200, height=80)
                     popup = folium.Popup(iframe, max_width=220)
 
-                    # Ícone do marcador no mapa (thumbnail)
-                    # Garantir que THUMBNAIL_PATH use barras normais ao construir o caminho do sistema
-                    thumbnail_rel_path = pet['THUMBNAIL_PATH'].replace('/', os.sep) if pet['THUMBNAIL_PATH'] else None
-                    thumbnail_filesystem_path = os.path.join(app.static_folder, thumbnail_rel_path) if thumbnail_rel_path else None
+                    # # Ícone do marcador no mapa (thumbnail)
+                    # # Garantir que THUMBNAIL_PATH use barras normais ao construir o caminho do sistema
+                    # thumbnail_rel_path = pet['THUMBNAIL_PATH'].replace('/', os.sep) if pet['THUMBNAIL_PATH'] else None
+                    # thumbnail_filesystem_path = os.path.join(app.static_folder, thumbnail_rel_path) if thumbnail_rel_path else None
 
-                    if thumbnail_filesystem_path and os.path.exists(thumbnail_filesystem_path):
-                        custom_icon = folium.CustomIcon(thumbnail_filesystem_path, icon_size=(50,50)) # Ícone um pouco maior
-                    else:
-                        app.logger.warning(f"Thumbnail não encontrado ou caminho inválido: {thumbnail_filesystem_path if thumbnail_filesystem_path else 'N/A'}. Usando ícone padrão.")
-                        custom_icon = folium.Icon(color='orange', icon='paw', prefix='fa') # Cor alterada para destaque
+                    # if thumbnail_filesystem_path and os.path.exists(thumbnail_filesystem_path):
+                    #     custom_icon = folium.CustomIcon(thumbnail_filesystem_path, icon_size=(50,50)) # Ícone um pouco maior
+                    # else:
+                    #     app.logger.warning(f"Thumbnail não encontrado ou caminho inválido: {thumbnail_filesystem_path if thumbnail_filesystem_path else 'N/A'}. Usando ícone padrão.")
+                    #     custom_icon = folium.Icon(color='orange', icon='paw', prefix='fa') # Cor alterada para destaque
                     
                     marker = folium.Marker(
                         location=[pet['LATITUDE'], pet['LONGITUDE']],
-                        icon=custom_icon,
+                        icon=custom_map_icon,
                         # Tooltip ao passar o mouse
-                        tooltip=f"<strong>{pet.get('NOME_PET', 'Pet')}</strong><br>Clique para mais informações"
+                        tooltip=f"<strong>{pet.get('NOME_PET', 'Pet')}</strong><br>Status: {status_pet_mapa}<br>Clique para mais informações"
                     )
                     marker.add_child(popup) # O popup agora contém o link "Ver Detalhes"
                     marker.add_to(mapa_folium)
@@ -245,10 +276,19 @@ def detalhes_pet(pet_id):
         
     url_encerrar = url_for('confirmar_encerrar_busca', pet_id=pet_info['ID'])
 
+# Definir classe CSS para o status
+    status_pet_classe = "status-perdi-text" # Default
+    if pet_info.get('STATUS_PET') == "Encontrei um PET":
+        status_pet_classe = "status-encontrado-text"
+    elif pet_info.get('RESOLVIDO'): # Se já resolvido, pode ter uma classe diferente ou a mesma de encontrado
+        status_pet_classe = "status-resolvido-text" # Exemplo para uma cor diferente se resolvido
+
+
     return render_template('detalhes_pet.html', 
                            pet=pet_info, 
                            foto_url=foto_url,
                            url_encerrar=url_encerrar,
+                           status_classe=status_pet_classe, # <<<< NOVA VARIÁVEL DE CONTEXTO
                            current_year=datetime.now().year)
 
 
