@@ -4,64 +4,135 @@
 
 {% block head_extra %}
     {{ super() }}
-    <style>
-        /* Estilos específicos para esta página já estão em styles.css */
-        /* A classe .pet-detail-card e suas filhas serão usadas */
-    </style>
+    {# Você pode adicionar links CSS específicos para esta página aqui, se necessário #}
+    {# No entanto, todos os estilos relevantes devem estar em static/css/styles.css #}
 {% endblock %}
 
 {% block content %}
-<div class="container mt-4 mb-5">
+<div class="container mt-4 mb-5"> {# Container principal da página #}
     {% if pet %}
     <div class="row justify-content-center">
-        <div class="col-md-10 col-lg-8">
+        <div class="col-md-10 col-lg-9"> {# Coluna um pouco mais larga para acomodar conteúdo #}
+            
             <div class="card pet-detail-card">
+                {# CABEÇALHO DO CARD COM NOME E ESPÉCIE DO PET #}
                 <div class="card-header text-center">
                     <h2 class="page-section-title mb-0">{{ pet.NOME_PET or 'Detalhes do PET' }} 
                         <span class="pet-detail-species">({{ pet.ESPECIE }})</span>
                     </h2>
                 </div>
+
+                {# CORPO DO CARD #}
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-5 text-center mb-3 mb-md-0">
+                        {# COLUNA DA IMAGEM DO PET #}
+                        <div class="col-lg-5 text-center mb-4 mb-lg-0">
                             <img src="{{ foto_url }}" alt="Foto de {{ pet.NOME_PET or 'PET' }}" class="img-fluid rounded pet-detail-image">
                         </div>
-                        <div class="col-md-7 pet-info-section">
-                            <p class="pet-status-detail {{ status_classe }}">{{ pet.STATUS_PET }}</p> 
+
+                        {# COLUNA DAS INFORMAÇÕES DO PET #}
+                        <div class="col-lg-7 pet-info-section">
+                            {# STATUS DO PET (PERDIDO/ENCONTRADO) #}
+                            <p class="pet-status-detail {{ status_classe }}">{{ pet.STATUS_PET }}</p>
                             
-                            <h4 class="section-subtitle">Informações do PET</h4>
+                            <h4 class="section-subtitle">Detalhes do Registro</h4>
                             <p><strong>Visto por último em:</strong><br> {{ pet.RUA }}, {{ pet.BAIRRO }}, {{ pet.CIDADE }}</p>
                             <p><strong>Contato para informações:</strong><br> {{ pet.CONTATO }}</p>
                             {% if pet.COMENTARIO %}
-                            <p><strong>Detalhes Adicionais:</strong><br><span class="pet-comment-text">{{ pet.COMENTARIO | nl2br }}</span></p>
+                            <p><strong>Observações:</strong><br><span class="pet-comment-text">{{ pet.COMENTARIO | nl2br }}</span></p>
                             {% endif %}
                             <p><strong>Cadastrado em:</strong><br> {{ pet.CREATED_AT.strftime('%d/%m/%Y às %H:%M') }}</p>
 
+                            {# BOTÃO DE ENCERRAR BUSCA (se aplicável) #}
                             {% if not pet.RESOLVIDO %}
-                            <hr class="my-4">
+                            <hr class="my-3"> {# Linha separadora menor #}
                             <a href="{{ url_encerrar }}" 
-                            class="btn btn-lg btn-block btn-encerrar-busca-custom"
-                            onclick="return confirm('Tem certeza que deseja encerrar a busca por este PET? Esta ação não pode ser desfeita.');">
-                             <i class="fas fa-check-circle mr-2"></i>Marcar como Encontrado / Encerrar Busca
+                               class="btn btn-success btn-block"  {# Usando btn-block para ocupar largura da coluna #}
+                               onclick="return confirm('Tem certeza que deseja encerrar a busca por este PET? Esta ação não pode ser desfeita.');">
+                                <i class="fas fa-check-circle mr-2"></i>Marcar como Encontrado / Encerrar Busca
                             </a>
                             {% else %}
-                            <div class="alert alert-info mt-4 text-center" role="alert">
-                                <i class="fas fa-info-circle mr-2"></i>Esta busca já foi encerrada.
+                            <div class="alert alert-info mt-3 text-center" role="alert" style="font-size: 0.95rem;">
+                                <i class="fas fa-info-circle mr-2"></i>Esta busca já foi encerrada em {{ pet.RESOLVIDO_AT.strftime('%d/%m/%Y às %H:%M') if pet.RESOLVIDO_AT else 'data não registrada' }}.
                             </div>
                             {% endif %}
                         </div>
                     </div>
-                </div>
+
+                    {# SEÇÃO DE ADICIONAR MENSAGEM (se a busca não estiver encerrada) #}
+                    {% if not pet.RESOLVIDO %}
+                    <hr class="my-4">
+                    <div class="pet-message-form-section">
+                        <h5><i class="fas fa-comments mr-2"></i>Deixe uma Mensagem</h5>
+                        <form action="{{ url_for('add_message', pet_id=pet.ID) }}" method="POST">
+                            <div class="form-group">
+                                <label for="commenter_name">Seu Nome (opcional):</label>
+                                <input type="text" class="form-control form-control-sm" id="commenter_name" name="commenter_name" placeholder="Ex: Maria V.">
+                            </div>
+                            <div class="form-group">
+                                <label for="message_text">Sua Mensagem (máx. 200 caracteres): *</label>
+                                <textarea class="form-control form-control-sm" id="message_text" name="message_text" rows="3" required maxlength="200" placeholder="Viu este pet? Tem alguma informação? Ajude!"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-paper-plane mr-1"></i> Enviar Mensagem</button>
+                        </form>
+                    </div>
+                    {% endif %}
+
+                    {# SEÇÃO DE LISTAR ÚLTIMAS MENSAGENS #}
+                    <hr class="my-4">
+                    <div class="pet-messages-list-section">
+                        <h5><i class="fas fa-history mr-2"></i>Últimas Mensagens ({{ messages|length }})</h5>
+                        {% if messages %}
+                            {% for msg in messages %}
+                            <div class="message-item">
+                                <p class="message-text">"{{ msg.MessageText }}"</p>
+                                <small class="message-meta">
+                                    - Por: <strong>{{ msg.CommenterName or 'Anônimo' }}</strong> 
+                                    em {{ msg.CreatedAt.strftime('%d/%m/%Y %H:%M') }}
+                                </small>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted text-center mt-3"><em>Nenhuma mensagem ainda para este PET. Seja o primeiro!</em></p>
+                        {% endif %}
+                    </div>
+
+                </div> {# Fim do card-body #}
+
+                {# RODAPÉ DO CARD COM BOTÃO DE VOLTAR #}
                 <div class="card-footer text-center py-3">
-                    <a href="{{ url_for('principal') }}" class="btn btn-outline-secondary">
+                    <a href="{{ url_for('principal') }}" class="btn btn-outline-secondary btn-sm"> {# btn-sm para consistência #}
                         <i class="fas fa-arrow-left mr-1"></i> Voltar para o Mapa
                     </a>
                 </div>
-            </div>
-        </div>
-    </div>
+            </div> {# Fim do pet-detail-card #}
+        </div> {# Fim da coluna #}
+    </div> {# Fim da row #}
     {% else %}
-    <div class="alert alert-warning text-center">Pet não encontrado ou informações indisponíveis.</div>
+    <div class="alert alert-warning text-center">
+        <i class="fas fa-exclamation-triangle mr-2"></i>Pet não encontrado ou informações indisponíveis.
+    </div>
     {% endif %}
-</div>
+</div> {# Fim do container principal da página #}
+{% endblock %}
+
+{% block scripts_extra %}
+{{ super() }}
+{# Adicionar JavaScript específico para esta página, se necessário.
+   Por exemplo, para validação de formulário de mensagem ou contagem de caracteres.
+<script>
+$(document).ready(function() {
+    // Exemplo: Contagem de caracteres para o textarea de mensagem
+    const messageText = $('#message_text');
+    const maxLength = parseInt(messageText.attr('maxlength'));
+    const counterHtml = `<small class="form-text text-muted char-counter">0/${maxLength} caracteres</small>`;
+    messageText.after(counterHtml);
+
+    messageText.on('input', function() {
+        let currentLength = $(this).val().length;
+        $(this).siblings('.char-counter').text(`${currentLength}/${maxLength} caracteres`);
+    });
+});
+</script>
+#}
 {% endblock %}

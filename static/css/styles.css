@@ -501,3 +501,68 @@ textarea.form-control {
     border-color: #269abc;
     color: white !important;
 }
+
+/* --- Estilos para Seção de Mensagens na Página de Detalhes do PET --- */
+.pet-message-form-section,
+.pet-messages-list-section {
+    margin-top: 25px;
+    padding-top: 20px;
+    /* border-top: 1px solid #eef1f5;  O <hr> já faz a separação */
+}
+
+.pet-message-form-section h5,
+.pet-messages-list-section h5 {
+    font-weight: 700;
+    color: #2D3748; /* Cor dos títulos */
+    margin-bottom: 15px;
+    font-size: 1.25rem;
+}
+
+.pet-message-form-section .form-group label {
+    font-size: 0.9rem; /* Labels menores no formulário de msg */
+    color: #555;
+}
+.pet-message-form-section .form-control-sm { /* Inputs menores */
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+}
+.pet-message-form-section textarea.form-control-sm {
+    line-height: 1.5;
+}
+.pet-message-form-section .btn-primary { /* Botão de enviar mensagem */
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem; /* Padding menor para btn-sm */
+    border-radius: 20px; /* Consistente com outros botões arredondados */
+    text-transform: none; /* Sem uppercase para este botão */
+}
+.pet-message-form-section .btn-primary i {
+    margin-right: 5px;
+}
+
+
+.message-item {
+    background-color: #f8f9fa; /* Fundo sutil para cada mensagem */
+    border: 1px solid #e9ecef;
+    border-left: 4px solid #4A90E2; /* Destaque com cor do tema */
+    padding: 12px 15px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.message-text {
+    margin-bottom: 5px;
+    color: #333;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    white-space: pre-wrap; /* Para respeitar quebras de linha na mensagem */
+}
+.message-meta {
+    font-size: 0.8rem;
+    color: #777;
+    display: block; /* Para ficar abaixo do texto da mensagem */
+    text-align: right; /* Alinhar metadados à direita */
+}
+.message-meta strong {
+    color: #555;
+}

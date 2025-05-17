@@ -246,6 +246,7 @@ def detalhes_pet(pet_id):
         return redirect(url_for('principal'))
 
     pet_info = None
+    latest_messages = [] # Lista para as mensagens
     try:
         with conn.cursor() as cursor:
             # Query precisa buscar todos os campos necessários para a página de detalhes
@@ -257,6 +258,17 @@ def detalhes_pet(pet_id):
             """
             cursor.execute(sql, (pet_id,))
             pet_info = cursor.fetchone()
+            if pet_info: # Buscar mensagens apenas se o pet for encontrado
+                sql_messages = """
+                    SELECT CommenterName, MessageText, CreatedAt
+                    FROM MESSAGES
+                    WHERE PetID = %s
+                    ORDER BY CreatedAt DESC
+                    LIMIT 3 
+                """ # Busca as 3 últimas mensagens
+                cursor.execute(sql_messages, (pet_id,))
+                latest_messages = cursor.fetchall()
+
     except pymysql.MySQLError as e:
         app.logger.error(f"Erro ao buscar detalhes do pet ID {pet_id}: {e}")
         flash("Erro ao carregar informações do pet.", "danger")
@@ -288,7 +300,8 @@ def detalhes_pet(pet_id):
                            pet=pet_info, 
                            foto_url=foto_url,
                            url_encerrar=url_encerrar,
-                           status_classe=status_pet_classe, # <<<< NOVA VARIÁVEL DE CONTEXTO
+                           status_classe=status_pet_classe,
+                           messages=latest_messages, # <<<< PASSANDO AS MENSAGENS PARA O TEMPLATE
                            current_year=datetime.now().year)
 
 
@@ -572,6 +585,47 @@ def confirmar_encerrar_busca(pet_id):
         if conn:
             conn.close()
     return redirect(url_for('principal'))
+
+
+@app.route('/pet/<int:pet_id>/add_message', methods=['POST'])
+def add_message(pet_id):
+    conn = open_conn()
+    if not conn:
+        flash("Erro de conexão com o banco de dados ao tentar postar mensagem.", "danger")
+        return redirect(url_for('detalhes_pet', pet_id=pet_id))
+
+    commenter_name = request.form.get('commenter_name', 'Anônimo') # Pega o nome ou default 'Anônimo'
+    message_text = request.form.get('message_text')
+
+    if not message_text or len(message_text.strip()) == 0:
+        flash("A mensagem não pode estar vazia.", "warning")
+        return redirect(url_for('detalhes_pet', pet_id=pet_id))
+    
+    if len(message_text) > 200: # Validação do tamanho (consistente com o DB)
+        flash("A mensagem é muito longa (máximo de 200 caracteres).", "warning")
+        return redirect(url_for('detalhes_pet', pet_id=pet_id))
+
+    try:
+        with conn.cursor() as cursor:
+            # Verificar se o PetID existe antes de inserir a mensagem
+            cursor.execute("SELECT ID FROM USERINPUT WHERE ID = %s", (pet_id,))
+            if not cursor.fetchone():
+                flash("PET não encontrado para adicionar mensagem.", "danger")
+                return redirect(url_for('principal'))
+
+            sql = "INSERT INTO MESSAGES (PetID, CommenterName, MessageText) VALUES (%s, %s, %s)"
+            cursor.execute(sql, (pet_id, commenter_name.strip(), message_text.strip()))
+            conn.commit()
+            flash("Mensagem enviada com sucesso!", "success")
+    except pymysql.MySQLError as e:
+        app.logger.error(f"Erro ao salvar mensagem para o pet ID {pet_id}: {e}")
+        flash("Erro ao enviar mensagem.", "danger")
+        conn.rollback() # Desfaz a transação em caso de erro
+    finally:
+        if conn:
+            conn.close()
+    
+    return redirect(url_for('detalhes_pet', pet_id=pet_id))
 
 if __name__ == '__main__':
     app.run(debug=True)
