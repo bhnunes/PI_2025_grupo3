@@ -81,17 +81,16 @@ def principal():
     conn = open_conn()
     if not conn:
         flash("Erro de conexão com o banco de dados.", "danger")
-        return render_template('index.html', current_year=datetime.now().year, mapa_html=None, pets=[])
+        return render_template('index.html', current_year=datetime.now().year, mapa_html=None) # Removido pets=[]
 
     mapa_folium = None
-    pets_no_mapa = []
+    # pets_no_mapa = [] # Não precisa inicializar aqui se a query sempre retorna algo ou None
     try:
         with conn.cursor() as cursor:
-            # Buscar pets não resolvidos
             sql = """
                 SELECT ID, NOME_PET, ESPECIE, RUA, BAIRRO, CIDADE, CONTATO, COMENTARIO, 
                        THUMBNAIL_PATH, LATITUDE, LONGITUDE, CREATED_AT, FOTO_PATH,
-                       STATUS_PET  -- <<<< ADICIONADA NOVA COLUNA
+                       STATUS_PET
                 FROM USERINPUT 
                 WHERE RESOLVIDO = 0 OR RESOLVIDO IS NULL 
                 ORDER BY CREATED_AT DESC
@@ -100,56 +99,165 @@ def principal():
             pets_no_mapa = cursor.fetchall()
 
         if pets_no_mapa:
-            # Centralizar mapa na média das coordenadas ou em uma localização padrão
-            avg_lat = sum(p['LATITUDE'] for p in pets_no_mapa if p['LATITUDE']) / len([p for p in pets_no_mapa if p['LATITUDE']]) if any(p['LATITUDE'] for p in pets_no_mapa) else -22.7532  # Americana-SP aprox.
-            avg_lon = sum(p['LONGITUDE'] for p in pets_no_mapa if p['LONGITUDE']) / len([p for p in pets_no_mapa if p['LONGITUDE']]) if any(p['LONGITUDE'] for p in pets_no_mapa) else -47.3330 # Americana-SP aprox.
+            avg_lat = sum(p['LATITUDE'] for p in pets_no_mapa if p['LATITUDE']) / len([p for p in pets_no_mapa if p['LATITUDE']]) if any(p['LATITUDE'] for p in pets_no_mapa) else -22.7532
+            avg_lon = sum(p['LONGITUDE'] for p in pets_no_mapa if p['LONGITUDE']) / len([p for p in pets_no_mapa if p['LONGITUDE']]) if any(p['LONGITUDE'] for p in pets_no_mapa) else -47.3330
             
             mapa_folium = folium.Map(location=[avg_lat, avg_lon], zoom_start=13)
 
             for pet in pets_no_mapa:
                 if pet['LATITUDE'] and pet['LONGITUDE'] and pet['THUMBNAIL_PATH']:
+                    
+                    encerrar_url = url_for('confirmar_encerrar_busca', pet_id=pet['ID'], _external=False) # _external=False é geralmente melhor para URLs internas
+                    status_texto = pet.get('STATUS_PET', 'Status não informado')
+                    local_completo = f"{pet['RUA']}, {pet['BAIRRO']}, {pet['CIDADE']}"
 
-                    encerrar_url = url_for('confirmar_encerrar_busca', pet_id=pet['ID'], _external=True) # _external pode ajudar com iframes
-                    status_texto = pet.get('STATUS_PET', 'Status não informado') # Pega o status do pet
-                    # Formatar o texto "Visto por último em:"
-                    local_visto_texto = f"<b>Visto por último em:</b>"
-                    popup_html = f"""
-                        <h4>{pet.get('NOME_PET', 'Sem nome')} ({pet['ESPECIE']})</h4>
-                        <p style="font-weight: bold; color: #007bff; margin-bottom: 5px;">{status_texto}</p>
-                        <img src='{url_for('static', filename=pet['FOTO_PATH'].replace('static/', '', 1))}' width='150'><br>
-                        {local_visto_texto}<br>
-                        <b>Local:</b> {pet['RUA']}, {pet['BAIRRO']}, {pet['CIDADE']}<br>
-                        <b>Contato:</b> {pet['CONTATO']}<br>
-                        <b>Info:</b> {pet['COMENTARIO'][:100] + '...' if pet['COMENTARIO'] and len(pet['COMENTARIO']) > 100 else pet['COMENTARIO']}<br>
-                        <b>Cadastrado em:</b> {pet['CREATED_AT'].strftime('%d/%m/%Y %H:%M')}<br>
+                    # CORREÇÃO DA URL DA IMAGEM:
+                    # Assumindo que pet['FOTO_PATH'] é 'uploads/imagens_pet/nome_da_foto.png'
+                    # url_for já sabe que 'static' é o diretório base para 'filename'
+                    foto_pet_url = url_for('static', filename=pet['FOTO_PATH']) if pet['FOTO_PATH'] else '#'
+                    print(foto_pet_url)
+                    # O .replace('static/', '', 1) não é necessário se FOTO_PATH já é relativo à pasta static.
+                    # E se FOTO_PATH começar com '\' (Windows) o url_for pode não gostar,
+                    # então garantir que seja salvo com '/' no banco é melhor.
+
+                    # ESTILOS CSS PARA O POPUP (INLINE OU BLOCO <STYLE>)
+                    # Moveremos os estilos do styles.css para cá
+                    # popup_styles = """
+                    # <style>
+                    #     body { font-family: 'Nunito', sans-serif; margin: 0; padding: 0; } /* Reset básico para o corpo do iframe */
+                    #     .pet-popup-container {
+                    #         padding: 15px; /* Reduzido um pouco para caber melhor */
+                    #         color: #4A5568;
+                    #         line-height: 1.5; /* Ajustado */
+                    #         max-width: 260px; /* Para garantir que caiba no iframe default */
+                    #         word-wrap: break-word; /* Quebra palavras longas */
+                    #     }
+                    #     .pet-popup-name {
+                    #         font-family: 'Pacifico', cursive !important;
+                    #         color: #DD6B20 !important;
+                    #         font-size: 1.5em !important; /* Ajustado */
+                    #         margin-bottom: 3px !important;
+                    #         text-align: center;
+                    #         line-height: 1.1;
+                    #     }
+                    #     .pet-popup-species {
+                    #         font-family: 'Nunito', sans-serif !important;
+                    #         font-size: 0.75em; /* Ajustado */
+                    #         color: #718096;
+                    #         font-weight: 600;
+                    #         display: block;
+                    #         text-align: center;
+                    #         margin-top: -4px;
+                    #     }
+                    #     .pet-popup-status {
+                    #         font-weight: 700;
+                    #         color: #4A90E2;
+                    #         margin-top: 8px; /* Adicionado espaço acima */
+                    #         margin-bottom: 10px; /* Reduzido */
+                    #         font-size: 1.0em; /* Ajustado */
+                    #         text-align: center;
+                    #         padding: 4px 0px; /* Padding ajustado */
+                    #         background-color: rgba(74, 144, 226, 0.08); /* Mais sutil */
+                    #         border-radius: 4px;
+                    #     }
+                    #     .pet-popup-image {
+                    #         display: block;
+                    #         width: 100%;
+                    #         max-width: 180px; /* Reduzido para caber melhor */
+                    #         height: auto;
+                    #         border-radius: 6px;
+                    #         margin: 0 auto 12px auto;
+                    #         border: 1px solid #dde; /* Borda mais sutil */
+                    #         box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+                    #     }
+                    #     .pet-popup-details p {
+                    #         margin-bottom: 6px;
+                    #         font-size: 0.9em; /* Reduzido para caber mais info */
+                    #     }
+                    #     .pet-popup-details .detail-label {
+                    #         color: #2D3748;
+                    #         font-weight: 700;
+                    #         margin-right: 4px;
+                    #     }
+                    #     .pet-popup-details .pet-info-text {
+                    #         color: #5A6779;
+                    #         display: inline; /* Para permitir quebra, mas fluir com o label se curto */
+                    #     }
+                    #     .pet-popup-button {
+                    #         display: block;
+                    #         width: 100%;
+                    #         margin-top: 12px !important;
+                    #         background-color: #38A169 !important;
+                    #         border: none !important; /* Removida borda para consistência com .btn */
+                    #         color: white !important;
+                    #         padding: 7px 10px !important;
+                    #         font-size: 0.9em !important;
+                    #         font-weight: 600 !important;
+                    #         border-radius: 20px !important;
+                    #         text-align: center;
+                    #         text-transform: none !important;
+                    #         letter-spacing: normal !important;
+                    #         transition: background-color 0.2s ease;
+                    #         text-decoration: none !important;
+                    #         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    #     }
+                    #     .pet-popup-button:hover {
+                    #         background-color: #2F855A !important;
+                    #         text-decoration: none !important;
+                    #     }
+                    # </style>
+                    # """
+
+                    popup_html_content = f"""
+                    <div class="pet-popup-container">
+                        <h4 class="pet-popup-name">{pet.get('NOME_PET', 'Pet Desconhecido')} 
+                            <span class="pet-popup-species">({pet['ESPECIE']})</span>
+                        </h4>
+                        <p class="pet-popup-status">{status_texto}</p>
+                        
+                        <img src='{foto_pet_url}' alt="Foto do PET: {pet.get('NOME_PET', '')}" class="pet-popup-image">
+                        
+                        <div class="pet-popup-details">
+                            <p><strong class="detail-label">Visto por último em:</strong> {local_completo}</p>
+                            <p><strong class="detail-label">Contato:</strong> {pet['CONTATO']}</p>
+                            <p><strong class="detail-label">Informações:</strong> 
+                               <span class="pet-info-text">{pet['COMENTARIO'][:150] + '...' if pet['COMENTARIO'] and len(pet['COMENTARIO']) > 150 else pet['COMENTARIO'] or 'Nenhuma informação adicional.'}</span>
+                            </p>
+                            <p><strong class="detail-label">Cadastrado em:</strong> {pet['CREATED_AT'].strftime('%d/%m/%Y %H:%M')}</p>
+                        </div>
+                        
                         <a href="{encerrar_url}" 
-                        class="btn btn-sm btn-success" 
-                        onclick="return confirm('Tem certeza que deseja encerrar a busca por este PET? Esta ação não pode ser desfeita.');"
-                        target="_top"> 
-                        Encerrar Busca
+                           class="pet-popup-button"
+                           onclick="return confirm('Tem certeza que deseja encerrar a busca por este PET? Esta ação não pode ser desfeita.');"
+                           target="_top"> 
+                           Encerrar Busca
                         </a>
+                    </div>
                     """
-                    iframe = folium.IFrame(popup_html, width=250, height=300)
-                    popup = folium.Popup(iframe, max_width=2650)
+                    
+                    # Combinar estilos e conteúdo HTML
+                    #full_popup_html = popup_styles + popup_html_content
+
+                    #iframe = folium.IFrame(full_popup_html, width=400, height=520) # Ajustado para mais conteúdo
+                    iframe = folium.IFrame(popup_html_content, width=300, height=420) # Use o HTML sem os estilos customizados
+                    popup = folium.Popup(iframe, max_width=300)
 
                     thumbnail_filesystem_path = os.path.join(app.static_folder, pet['THUMBNAIL_PATH'])
                     if os.path.exists(thumbnail_filesystem_path):
                         custom_icon = folium.CustomIcon(thumbnail_filesystem_path, icon_size=(40,40))
                     else:
                         app.logger.warning(f"Arquivo de thumbnail não encontrado em: {thumbnail_filesystem_path}. Usando ícone padrão.")
-                        # Fallback para um ícone padrão do Folium se o thumbnail não for encontrado
-                        custom_icon = folium.Icon(color='blue', icon='paw', prefix='fa') # Exemplo
+                        custom_icon = folium.Icon(color='blue', icon='paw', prefix='fa')
 
                     folium.Marker(
                         [pet['LATITUDE'], pet['LONGITUDE']],
                         popup=popup,
                         tooltip=f"{pet.get('NOME_PET', 'Pet')} - {pet['BAIRRO']}",
-                        icon=custom_icon # ou folium.Icon(color='blue', icon='paw', prefix='fa') se tiver FontAwesome
+                        icon=custom_icon
                     ).add_to(mapa_folium)
             mapa_html = mapa_folium._repr_html_() if mapa_folium else "<p>Nenhum pet perdido para exibir no mapa.</p>"
         else:
-            # Mapa padrão se não houver pets
-            mapa_folium = folium.Map(location=[-22.7532, -47.3330], zoom_start=12) # Americana-SP aprox.
+            mapa_folium = folium.Map(location=[-22.7532, -47.3330], zoom_start=12)
             mapa_html = mapa_folium._repr_html_()
             
     except pymysql.MySQLError as e:
@@ -272,9 +380,11 @@ def cadastrar_pet():
                                  STATUS_PET) -- <<<< ADICIONADA NOVA COLUNA
                                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0, %s, %s, %s) -- <<<< ADICIONADO NOVO PLACEHOLDER
                             """
-                            # Caminhos relativos a partir de 'static' para URL_FOR
-                            db_foto_path = os.path.join('uploads', 'imagens_pet', filename)
-                            db_thumbnail_path = os.path.join('uploads', 'thumbnails_pet', thumbnail_filename)
+                            # ---- CORREÇÃO IMPORTANTE AQUI ----
+                            # Caminhos relativos a partir de 'static' para URL_FOR, usando '/'
+                            db_foto_path = os.path.join('uploads', 'imagens_pet', filename).replace(os.sep, '/')
+                            db_thumbnail_path = os.path.join('uploads', 'thumbnails_pet', thumbnail_filename).replace(os.sep, '/')
+                            # ---- FIM DA CORREÇÃO ----
 
                             cursor_insert.execute(sql_insert, 
                                                 (nome_pet, especie, rua, bairro, cidade, contato, comentario,
