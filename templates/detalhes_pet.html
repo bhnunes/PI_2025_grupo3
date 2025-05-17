@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}{{ pet.NOME_PET or 'Detalhes do PET' }} - BuscaPet{% endblock %}
+
+{% block head_extra %}
+    {{ super() }}
+    {# Adicionar quaisquer CSS específicos para esta página aqui, se necessário #}
+    <style>
+        /* Estilos específicos para esta página já estão em styles.css */
+        /* A classe .pet-detail-card e suas filhas serão usadas */
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    {% if pet %}
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
+            <div class="card pet-detail-card">
+                <div class="card-header text-center">
+                    {# Removido page-title-container daqui, o título está direto no header do card #}
+                    <h2 class="page-section-title mb-0">{{ pet.NOME_PET or 'Detalhes do PET' }} 
+                        <span class="pet-detail-species">({{ pet.ESPECIE }})</span>
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-5 text-center mb-3 mb-md-0">
+                            <img src="{{ foto_url }}" alt="Foto de {{ pet.NOME_PET or 'PET' }}" class="img-fluid rounded pet-detail-image">
+                        </div>
+                        <div class="col-md-7 pet-info-section">
+                            {# STATUS_PET exibido aqui com destaque #}
+                            <p class="pet-status-detail">{{ pet.STATUS_PET }}</p>
+                            
+                            <h4 class="section-subtitle">Informações do PET</h4>
+                            <p><strong>Visto por último em:</strong><br> {{ pet.RUA }}, {{ pet.BAIRRO }}, {{ pet.CIDADE }}</p>
+                            <p><strong>Contato para informações:</strong><br> {{ pet.CONTATO }}</p>
+                            {% if pet.COMENTARIO %}
+                            <p><strong>Detalhes Adicionais:</strong><br><span class="pet-comment-text">{{ pet.COMENTARIO | nl2br }}</span></p>
+                            {% endif %}
+                            <p><strong>Cadastrado em:</strong><br> {{ pet.CREATED_AT.strftime('%d/%m/%Y às %H:%M') }}</p>
+
+                            {% if not pet.RESOLVIDO %}
+                            <hr class="my-4">
+                            <a href="{{ url_encerrar }}" 
+                               class="btn btn-success btn-lg btn-block"  {# Botão maior e de bloco #}
+                               onclick="return confirm('Tem certeza que deseja encerrar a busca por este PET? Esta ação não pode ser desfeita.');">
+                                <i class="fas fa-check-circle mr-2"></i>Marcar como Encontrado / Encerrar Busca
+                            </a>
+                            {% else %}
+                            <div class="alert alert-info mt-4 text-center" role="alert">
+                                <i class="fas fa-info-circle mr-2"></i>Esta busca já foi encerrada.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer text-center py-3">
+                    <a href="{{ url_for('principal') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left mr-1"></i> Voltar para o Mapa
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning text-center">Pet não encontrado ou informações indisponíveis.</div>
+    {% endif %}
+</div>
+{% endblock %}
