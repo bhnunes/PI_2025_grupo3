@@ -31,3 +31,14 @@ CREATE TABLE USERINPUT (
     LONGITUDE DECIMAL(11, 8) NULL,      -- Longitude do local do cadastro
     INDEX idx_bairro_resolvido (BAIRRO, RESOLVIDO) -- Para filtrar por bairro e status
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+====================================================
+
+CREATE TABLE MESSAGES (
+    MessageID INT AUTO_INCREMENT PRIMARY KEY,
+    PetID INT NOT NULL,                     -- Chave estrangeira para a tabela USERINPUT
+    CommenterName VARCHAR(100) NULL,        -- Nome opcional de quem comentou
+    MessageText VARCHAR(200) NOT NULL,      -- Limitar a mensagem (ex: 200 caracteres, não 40, para ser mais útil)
+    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    FOREIGN KEY (PetID) REFERENCES USERINPUT(ID) ON DELETE CASCADE -- Se o PET for deletado, as mensagens dele também são.
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
