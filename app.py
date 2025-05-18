@@ -15,7 +15,6 @@ from io import BytesIO
 import matplotlib
 matplotlib.use('Agg') # Define o backend como 'Agg' para não precisar de GUI
 import matplotlib.pyplot as plt
-import numpy as np
 
 load_dotenv()
 app = Flask(__name__)
@@ -553,7 +552,7 @@ def gerar_dados_dashboard_pets():
             sizes = [total_perdidos, total_encontrados]
             colors = ['#ff9999','#66b3ff']
             
-            fig, ax = plt.subplots(figsize=(5,3)) # Ajustar tamanho
+            _, ax = plt.subplots(figsize=(5,3)) # Ajustar tamanho
             ax.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90, colors=colors)
             ax.axis('equal') # Equal aspect ratio ens.
             
