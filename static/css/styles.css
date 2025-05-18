@@ -205,12 +205,29 @@ form label {
     color: #4A5568;
     margin-bottom: 0.5rem;
 }
-.form-control, .custom-file-label {
+/* Estilo geral para inputs, textareas e selects */
+.form-control, 
+.custom-file-label { /* Aplicar ao label do custom file também */
     border-radius: 8px;
     border: 1px solid #CBD5E0;
-    padding: 0.85rem 1rem;
+    padding: 0.85rem 1rem; /* Padding padrão */
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    font-size: 1rem; /* Tamanho de fonte padrão para inputs */
+    line-height: 1.5; /* Altura da linha padrão */
 }
+
+/* <<<< NOVA REGRA ESPECÍFICA PARA SELECTS >>>> */
+form select.form-control {
+    font-size: 0.9rem; /* Reduzir um pouco a fonte para selects */
+    padding-top: 0.75rem;    /* Ajustar padding vertical se necessário */
+    padding-bottom: 0.75rem; /* Ajustar padding vertical se necessário */
+    /* Se o texto ainda estiver muito grande, pode reduzir mais o font-size ou o padding horizontal */
+    /* padding-left: 0.75rem; */
+    /* padding-right: 0.75rem; */
+    height: calc(1.5em + 1.5rem + 2px); /* Para manter altura similar a outros inputs Bootstrap com padding ajustado */
+}
+/* <<<< FIM DA NOVA REGRA >>>> */
+
 .custom-file-input:focus ~ .custom-file-label {
     border-color: #4A90E2;
     box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.25);
@@ -313,7 +330,7 @@ textarea.form-control {
 .card.text-white .card-header, 
 .card.bg-danger .card-header, 
 .card.bg-success .card-header {
-    color: white !important; /* Alterado de black para white */
+    color: black !important; /* Alterado de black para white */
     border-bottom: 1px solid rgba(255,255,255,0.2);
 }
 .card-title {
