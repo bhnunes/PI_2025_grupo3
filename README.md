@@ -8,7 +8,7 @@
 Este projeto, desenvolvido como parte do Projeto Integrador do curso de Bacharelado em Ciência de Dados da Univesp, visa criar uma plataforma web para facilitar a localização, identificação e conexão de animais perdidos ou em situação de rua na região de Americana, SP. Acreditamos que a tecnologia pode ser uma poderosa aliada na proteção animal, e esta plataforma é nossa contribuição para tornar mais fácil o reencontro de animais com seus tutores e promover a adoção responsável.
 
 <p align="center">
-  <img src="Images\dog.webp" alt="Logo da Plataforma" width="400">
+  <img src="static\img\logo_projeto.png" alt="Logo da Plataforma" width="400">
 </p>
 
 ## ✨ Funcionalidades Principais

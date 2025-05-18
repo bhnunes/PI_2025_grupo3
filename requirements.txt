@@ -1,0 +1,6 @@
+Flask
+python-dotenv
+PyMySQL
+Pillow
+folium
+matplotlib

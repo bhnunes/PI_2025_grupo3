@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Principal - 🐾BuscaPet🐱{% endblock %}
+
+{% block head_extra %}
+    {{ super() }}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <style>
+        .page-header-custom .lead {
+            font-size: 1.3rem;
+            color: #4A5568;
+            margin-top: 1rem; /* Reduzido um pouco se o título está maior */
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="text-center page-header-custom">
+    <h1 class="site-title">
+        BuscaPet
+    </h1>
+    <div class="title-image-container">
+        <img src="{{ url_for('static', filename='img/BuscaPet.png') }}" alt="Ilustração Pet" class="title-side-image">
+    </div>
+    <p class="lead">Ajudando a reunir pets perdidos com seus tutores na sua comunidade.
+        <img src="{{ url_for('static', filename='img/dancing_cat.gif') }}" alt="Gato dançando" class="dancing-cat-gif">
+    </p>
+</div>
+
+<div id="map-container">
+    {% if mapa_html %}
+        {{ mapa_html|safe }}
+    {% else %}
+        <div class="alert alert-warning text-center" role="alert">
+            <i class="fas fa-exclamation-triangle"></i> Não foi possível carregar o mapa. Verifique a conexão ou tente mais tarde.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts_extra %}
+<script type="text/javascript">
+    // Garantir que isso seja executado e defina a função no escopo global da janela principal
+    window.encerrarBuscaPet = function(petId) { // Renomeado para evitar qualquer conflito residual
+        console.log("CHAMADA DE window.parent.encerrarBuscaPet - PET ID:", petId);
+        if (confirm('Tem certeza que deseja encerrar a busca por este PET? Esta ação não pode ser desfeita.')) {
+            const targetUrl = `/encerrar_busca/${petId}`;
+            fetch(targetUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => { throw new Error(`Erro do servidor: ${response.status} - ${text}`); });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.reload();
+                } else {
+                    alert('Erro ao encerrar busca: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Erro na função encerrarBuscaPet:', error);
+                alert('Ocorreu um erro de comunicação. Verifique o console do navegador.');
+            });
+        }
+    };
+</script>
+{% endblock %}

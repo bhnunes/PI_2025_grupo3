@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}{{ pet.NOME_PET or 'Detalhes do PET' }} - BuscaPet{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    {% if pet %}
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-9">
+            
+            <div class="card pet-detail-card">
+                <div class="card-header text-center">
+                    <h2 class="page-section-title mb-0">{{ pet.NOME_PET or 'Detalhes do PET' }} 
+                        <span class="pet-detail-species">({{ pet.ESPECIE }})</span>
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-5 text-center mb-4 mb-lg-0">
+                            <img src="{{ foto_url }}" alt="Foto de {{ pet.NOME_PET or 'PET' }}" class="img-fluid rounded pet-detail-image">
+                        </div>
+                        <div class="col-lg-7 pet-info-section">
+                            <p class="pet-status-detail {{ status_classe }}">{{ pet.STATUS_PET }}</p>
+                            
+                            <h4 class="section-subtitle">Detalhes do Registro</h4>
+                            <p><strong>Visto por último em:</strong><br> {{ pet.RUA }}, {{ pet.BAIRRO }}, {{ pet.CIDADE }}</p>
+                            <p><strong>Contato para informações:</strong><br> {{ pet.CONTATO }}</p>
+                            {% if pet.COMENTARIO %}
+                            <p><strong>Observações:</strong><br><span class="pet-comment-text">{{ pet.COMENTARIO | nl2br }}</span></p>
+                            {% endif %}
+                            <p><strong>Cadastrado em:</strong><br> {{ pet.CREATED_AT.strftime('%d/%m/%Y às %H:%M') }}</p>
+                            {% if not pet.RESOLVIDO %}
+                            <hr class="my-3">
+                            <a href="{{ url_encerrar }}" 
+                               class="btn btn-success btn-block"  {# Usando btn-block para ocupar largura da coluna #}
+                               onclick="return confirm('Tem certeza que deseja encerrar a busca por este PET? Esta ação não pode ser desfeita.');">
+                                <i class="fas fa-check-circle mr-2"></i>Marcar como Encontrado / Encerrar Busca
+                            </a>
+                            {% else %}
+                            <div class="alert alert-info mt-3 text-center" role="alert" style="font-size: 0.95rem;">
+                                <i class="fas fa-info-circle mr-2"></i>Esta busca já foi encerrada em {{ pet.RESOLVIDO_AT.strftime('%d/%m/%Y às %H:%M') if pet.RESOLVIDO_AT else 'data não registrada' }}.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if not pet.RESOLVIDO %}
+                    <hr class="my-4">
+                    <div class="pet-message-form-section">
+                        <h5><i class="fas fa-comments mr-2"></i>Deixe uma Mensagem</h5>
+                        <form id="addMessageForm" action="{{ url_for('add_message', pet_id=pet.ID) }}" method="POST">
+                            <div class="form-group">
+                                <label for="commenter_name">Seu Nome (opcional):</label>
+                                <input type="text" class="form-control form-control-sm" id="commenter_name" name="commenter_name" placeholder="Ex: Maria V.">
+                            </div>
+                            <div class="form-group">
+                                <label for="message_text">Sua Mensagem (máx. 100 caracteres): *</label>
+                                <textarea class="form-control form-control-sm" id="message_text" name="message_text" rows="3" required maxlength="100" placeholder="Viu este pet? Tem alguma informação? Ajude!"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-paper-plane mr-1"></i> Enviar Mensagem</button>
+                        </form>
+                    </div>
+                    {% endif %}
+                    <hr class="my-4">
+                    <div class="pet-messages-list-section">
+                        <h5><i class="fas fa-history mr-2"></i>Últimas Mensagens ({{ messages|length }})</h5>
+                        {% if messages %}
+                            {% for msg in messages %}
+                            <div class="message-item">
+                                <p class="message-text">"{{ msg.MessageText }}"</p>
+                                <small class="message-meta">
+                                    - Por: <strong>{{ msg.CommenterName or 'Anônimo' }}</strong> 
+                                    em {{ msg.CreatedAt.strftime('%d/%m/%Y %H:%M') }}
+                                </small>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted text-center mt-3"><em>Nenhuma mensagem ainda para este PET. Seja o primeiro!</em></p>
+                        {% endif %}
+                    </div>
+
+                </div>
+                <div class="card-footer text-center py-3">
+                    <a href="{{ url_for('principal') }}" class="btn btn-outline-secondary btn-sm"> {# btn-sm para consistência #}
+                        <i class="fas fa-arrow-left mr-1"></i> Voltar para o Mapa
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning text-center">
+        <i class="fas fa-exclamation-triangle mr-2"></i>Pet não encontrado ou informações indisponíveis.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts_extra %}
+{{ super() }}
+   <script>
+    $(document).ready(function() {
+        const messageText = $('#message_text'); // Seleciona o textarea
+        const submitButton = $('#submitMessageBtn'); // Seleciona o botão de submit
+        const form = $('#addMessageForm'); // Seleciona o formulário
+    
+        // Verifica se o elemento messageText existe na página (só existe se a busca não estiver resolvida)
+        if (messageText.length) {
+            const maxLength = parseInt(messageText.attr('maxlength'));
+            
+            // Adiciona o elemento do contador após o textarea
+            const counterHtml = `<small class="form-text text-muted char-counter mt-1">0/${maxLength} caracteres</small>`;
+            messageText.after(counterHtml);
+            const charCounter = messageText.siblings('.char-counter'); // Seleciona o contador
+    
+            // Função para atualizar o contador e o estado do botão
+            function updateCounter() {
+                let currentLength = messageText.val().length;
+                charCounter.text(`${currentLength}/${maxLength} caracteres`);
+    
+                if (currentLength > maxLength) {
+                    charCounter.css('color', 'red'); // Muda a cor do contador para vermelho
+                    submitButton.prop('disabled', true); // Desabilita o botão de enviar
+                } else if (currentLength === 0 && messageText.prop('required')) { // Se for obrigatório e vazio
+                    charCounter.css('color', '#6c757d'); // Cor padrão do text-muted
+                    submitButton.prop('disabled', true); // Desabilita se for obrigatório e vazio
+                }
+                else {
+                    charCounter.css('color', '#6c757d'); // Cor padrão
+                    submitButton.prop('disabled', false); // Habilita o botão
+                }
+            }
+    
+            // Chama a função ao carregar a página para estado inicial correto
+            updateCounter();
+    
+            // Adiciona o listener para o evento 'input' (quando o usuário digita)
+            messageText.on('input', function() {
+                updateCounter();
+            });
+    
+            // Opcional: Prevenir o envio do formulário se o JS estiver habilitado e o limite for excedido
+            // A validação do backend ainda é crucial
+            form.on('submit', function(event) {
+                if (messageText.val().length > maxLength) {
+                    alert(`Sua mensagem excedeu o limite de ${maxLength} caracteres.`);
+                    event.preventDefault(); // Impede o envio do formulário
+                    return false;
+                }
+                if (messageText.val().trim().length === 0 && messageText.prop('required')) {
+                    alert(`A mensagem não pode estar vazia.`);
+                    event.preventDefault(); // Impede o envio do formulário
+                    return false;
+                }
+            });
+        }
+    });
+    </script>
+{% endblock %}

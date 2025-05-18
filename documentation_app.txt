@@ -1,0 +1,33 @@
+CREATE TABLE LOCATIONS (
+    ID INT AUTO_INCREMENT PRIMARY KEY,
+    RUA VARCHAR(255) NOT NULL,
+    BAIRRO VARCHAR(100) NOT NULL,
+    CIDADE VARCHAR(100) NOT NULL,
+    CEP VARCHAR(10) NULL,         -- Ex: '12345-678' ou '12345678'
+    LATITUDE DECIMAL(10, 8) NOT NULL, -- Suficiente para precisão de geolocalização
+    LONGITUDE DECIMAL(11, 8) NOT NULL, -- Longitude pode ir até +/-180
+    INDEX idx_bairro_rua (BAIRRO, RUA), -- Índice para buscas rápidas por bairro e rua
+    INDEX idx_cep (CEP)                 -- Índice para buscas rápidas por CEP (se aplicável)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+=====================================================
+
+CREATE TABLE USERINPUT (
+    ID INT AUTO_INCREMENT PRIMARY KEY,
+    NOME_PET VARCHAR(100) NULL,        -- Nome do animal, pode ser opcional
+    ESPECIE VARCHAR(50) NOT NULL,       -- Ex: 'Cachorro', 'Gato', 'Pássaro'
+    RUA VARCHAR(255) NOT NULL,          -- Rua onde o animal foi visto/perdido
+    BAIRRO VARCHAR(100) NOT NULL,
+    CIDADE VARCHAR(100) NOT NULL DEFAULT 'Americana/SP', -- Pode ter um valor padrão
+    CONTATO VARCHAR(100) NOT NULL,      -- Telefone, e-mail do usuário
+    COMENTARIO TEXT NULL,               -- Descrição mais detalhada
+    FOTO_PATH VARCHAR(255) NOT NULL,    -- Caminho para a imagem original
+    THUMBNAIL_PATH VARCHAR(255) NOT NULL, -- Caminho para a miniatura da imagem
+    CREATED_AT TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL, -- Data/hora do cadastro
+    RESOLVIDO BOOLEAN DEFAULT FALSE NOT NULL, -- Se o animal foi encontrado (MySQL usa TINYINT(1) para BOOLEAN)
+    RESOLVIDO_AT TIMESTAMP NULL,        -- Data/hora que foi marcado como resolvido
+    LATITUDE DECIMAL(10, 8) NULL,       -- Latitude do local do cadastro (pode ser buscada da tabela LOCATIONS)
+    LONGITUDE DECIMAL(11, 8) NULL,      -- Longitude do local do cadastro
+    INDEX idx_bairro_resolvido (BAIRRO, RESOLVIDO) -- Para filtrar por bairro e status
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

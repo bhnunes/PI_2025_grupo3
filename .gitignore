@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.env
+*.venv
+env/
+venv/
+ENV/
+*.egg-info/
+*.egg
+*.log
+
+# Flask
+instance/
+*.sqlite3
+*.db
+
+# MySQL
+*.sql
+
+# AWS
+*.pem
+*.key
+
+# Frontend
+node_modules/
+dist/
+build/
+
+# General
+.DS_Store
+Thumbs.db
+*.bak
+*.swp
+*.tmp
+*.log
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.iml
+
+# OS generated files
+*.~lock.*
+
+static/uploads/

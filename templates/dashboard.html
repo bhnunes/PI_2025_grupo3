@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - 🐾BuscaPet🐱{% endblock %}
+
+{% block content %}
+<div class="page-title-container text-center mt-3 mb-5">
+    <img src="{{ url_for('static', filename='img/estatisticas.png') }}" alt="Cachorro analisando dados" class="title-prefix-image">
+    <h2 class="page-section-title">Dashboard de Animais</h2>
+</div>
+
+{% if data and not data.sem_dados %}
+    <div class="row">
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card text-white bg-danger h-100 dashboard-stat-card">   
+                <div class="card-header"><i class="fas fa-search-location"></i> Perdidos Atualmente</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ data.total_perdidos or 0 }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card text-white bg-success h-100 dashboard-stat-card">
+                <div class="card-header"><i class="fas fa-check-circle"></i> Já Encontrados</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ data.total_encontrados or 0 }}</h5>
+                </div>
+            </div>
+        </div>
+        {% if data.stats_chart %}
+        <div class="col-lg-6 col-md-12 mb-4">
+            <div class="card h-100 card-visao-geral"> 
+                <div class="card-header"><i class="fas fa-chart-pie"></i> Visão Geral (Perdidos x Encontrados)</div>
+                <div class="card-body text-center d-flex align-items-center justify-content-center">
+                     <img src="data:image/png;base64,{{ data.stats_chart }}" alt="Gráfico de Estatísticas" class="img-fluid" style="max-height: 200px;">
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="row mt-2">
+        {% if data.top_bairros_perdidos %}
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header"><i class="fas fa-map-marker-alt"></i> Top 5 Bairros (Mais Perdidos)</div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% for bairro in data.top_bairros_perdidos %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ bairro.BAIRRO }}
+                            <span class="badge badge-primary badge-pill" style="font-size: 0.9rem;">{{ bairro.count }}</span>
+                        </li>
+                        {% else %}
+                        <li class="list-group-item text-muted">Nenhum dado de bairro disponível.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if data.latest_cases %}
+    <div class="row mt-2">
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header"><i class="fas fa-clock"></i> Últimos Pets Cadastrados (Não Encontrados)</div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Espécie</th>
+                                    <th>Bairro</th>
+                                    <th>Data Cadastro</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pet in data.latest_cases %}
+                                <tr>
+                                    <td>{{ pet.NOME_PET or 'N/A' }}</td>
+                                    <td>{{ pet.ESPECIE }}</td>
+                                    <td>{{ pet.BAIRRO }}</td>
+                                    <td>{{ pet.CREATED_AT.strftime('%d/%m/%Y %H:%M') }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">Nenhum pet recente para exibir.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+{% elif data and data.sem_dados %}
+    <div class="alert alert-info text-center" role="alert">
+        <i class="fas fa-info-circle"></i> Ainda não há dados suficientes para exibir as estatísticas. Cadastre mais pets ou verifique mais tarde!
+    </div>
+{% else %}
+    <div class="alert alert-warning text-center" role="alert">
+       <i class="fas fa-exclamation-triangle"></i> Não foi possível carregar os dados do dashboard.
+    </div>
+{% endif %}
+{% endblock %}

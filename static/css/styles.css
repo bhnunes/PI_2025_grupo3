@@ -1,0 +1,585 @@
+/* static/css/styles.css */
+
+/* --- Configurações Globais e Fontes --- */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&family=Pacifico&display=swap');
+
+body {
+    font-family: 'Nunito', sans-serif;
+    background-color: #eef1f5;
+    color: #4A5568;
+    padding-top: 80px; /* Ajustado para navbar maior */
+    padding-bottom: 80px; /* Espaço para o rodapé */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    line-height: 1.6;
+}
+
+.container, .container-fluid {
+    flex-grow: 1; /* Para o main content ocupar o espaço disponível */
+}
+
+main.flex-shrink-0 { /* Garante que o main não encolha demais */
+    flex-shrink: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    color: #2D3748;
+}
+
+/* --- Navbar --- */
+.navbar {
+    background: linear-gradient(90deg, #4A90E2 0%, #50E3C2 100%) !important;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+    padding-top: 0.8rem; /* Reduzido um pouco para não ficar tão alto com fontes maiores */
+    padding-bottom: 0.8rem;
+    border-bottom: 2px solid rgba(255,255,255,0.2);
+}
+
+.navbar-brand {
+    font-family: 'Pacifico', cursive;
+    font-size: 1.9rem !important; /* Ajustado para equilíbrio */
+    color: #fff !important;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+}
+.navbar-brand img.logo-navbar { /* Classe específica para o logo na navbar */
+    margin-right: 12px;
+    width: 38px; /* Tamanho do logo na navbar */
+    height: 38px;
+    object-fit: contain;
+}
+
+.navbar-nav .nav-link {
+    color: #f0f0f0 !important;
+    font-weight: 600;
+    font-size: 1.15rem; /* Tamanho aumentado da fonte dos links de navegação */
+    padding: 0.7rem 1.3rem; /* Padding ajustado para acomodar texto maior */
+    border-radius: 5px;
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+}
+.navbar-nav .nav-link:hover,
+.navbar-nav .nav-item.active .nav-link {
+    color: #fff !important;
+    background-color: rgba(255,255,255,0.15);
+}
+.navbar-nav .nav-link i {
+    margin-right: 10px;
+    font-size: 1.1em;  /* Tamanho do ícone relativo à fonte do link */
+}
+
+/* --- Página Principal - Título e Lead --- */
+.page-header-custom {
+    background-color: transparent;
+    padding: 40px 15px 20px 15px; /* Ajustado padding inferior */
+    margin-bottom: 25px; /* Ajustado margem inferior */
+    border-radius: 0;
+    box-shadow: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap; /* Permitir quebra se necessário */
+}
+
+h1.site-title { /* Título principal (ex: "BuscaPet") */
+    font-family: 'Pacifico', cursive;
+    color: #DD6B20; /* Laranja queimado */
+    font-size: 3.8rem; /* Tamanho aumentado */
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    margin: 0 15px 0 0; /* Margem à direita para separar da imagem */
+    line-height: 1; /* Ajustar altura da linha */
+}
+
+.title-image-container { /* Container para a imagem ao lado do título */
+    margin-left: 0; /* Removido, pois o flex já cuida do espaçamento se h1 tiver margem */
+}
+
+img.title-side-image { /* Imagem ao lado do título principal */
+    width: 70px;  /* Tamanho ajustado */
+    height: 70px; /* Manter proporção para círculo */
+    border-radius: 50%; /* Recorte circular */
+    object-fit: cover; /* Garante que a imagem preencha o círculo */
+    border: 3px solid rgba(255,255,255,0.7); /* Borda branca sutil */
+    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+}
+
+.page-header-custom .lead {
+    color: #6A7588; /* Tom de cinza um pouco mais escuro e azulado */
+    font-size: 1.35rem; /* Um pouco maior para mais impacto */
+    font-weight: 400; /* Mantido, ou 300 para mais leveza se a fonte Nunito suportar bem */
+    max-width: 750px; /* Aumentar um pouco a largura máxima */
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    margin-top: 20px; /* Mais espaço acima do lead */
+    line-height: 1.75; /* Melhorar espaçamento entre linhas */
+    font-style: italic;
+    padding: 10px 0; /* Adicionar um pouco de padding vertical */
+    border-top: 1px dashed #D1D5DB;
+    border-bottom: 1px dashed #D1D5DB;
+    background-color: rgba(74, 144, 226, 0.03); /* Fundo MUITO sutil com a cor primária */
+    display: flex; /* Transforma o parágrafo em um flex container */
+    justify-content: center; /* Centraliza o conteúdo (texto + gif) */
+    align-items: center; /* Alinha verticalmente o texto e o gif */
+    flex-wrap: wrap; /* Permite quebra se o conteúdo for muito longo */
+}
+
+.dancing-cat-gif {
+    height: 50px;
+    width: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-left: 12px;
+    border: 2px solid rgba(221, 107, 32, 0.3); /* Borda sutil opcional na cor do título */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* --- Estilos para Títulos de Seção com Imagem (ex: Cadastrar PET, Dashboard) --- */
+.page-title-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+img.title-prefix-image {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 20px;
+    border: 3px solid #fff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+h2.page-section-title {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #2D3748;
+    margin-bottom: 0;
+    line-height: 1.2;
+}
+
+/* Ajuste responsivo opcional para o título da página de cadastro */
+@media (max-width: 576px) {
+    .page-title-container {
+        flex-direction: column;
+        text-align: center;
+    }
+    img.title-prefix-image {
+        margin-right: 0;
+        margin-bottom: 15px;
+        width: 70px;
+        height: 70px;
+    }
+    h2.page-section-title {
+        font-size: 1.8rem;
+    }
+}
+
+/* --- Mapa --- */
+#map-container {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    margin-bottom: 40px;
+}
+.folium-map {
+    height: 65vh !important;
+    min-height: 480px;
+}
+
+/* --- Formulários --- */
+form {
+    background-color: #ffffff;
+    padding: 35px 40px;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.12);
+    margin-top: 20px;
+}
+form label {
+    font-weight: 600;
+    color: #4A5568;
+    margin-bottom: 0.5rem;
+}
+/* Estilo geral para inputs, textareas e selects */
+.form-control, 
+.custom-file-label { /* Aplicar ao label do custom file também */
+    border-radius: 8px;
+    border: 1px solid #CBD5E0;
+    padding: 0.85rem 1rem; /* Padding padrão */
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    font-size: 1rem; /* Tamanho de fonte padrão para inputs */
+    line-height: 1.5; /* Altura da linha padrão */
+}
+
+/* <<<< NOVA REGRA ESPECÍFICA PARA SELECTS >>>> */
+form select.form-control {
+    font-size: 0.9rem; /* Reduzir um pouco a fonte para selects */
+    padding-top: 0.75rem;    /* Ajustar padding vertical se necessário */
+    padding-bottom: 0.75rem; /* Ajustar padding vertical se necessário */
+    /* Se o texto ainda estiver muito grande, pode reduzir mais o font-size ou o padding horizontal */
+    /* padding-left: 0.75rem; */
+    /* padding-right: 0.75rem; */
+    height: calc(1.5em + 1.5rem + 2px); /* Para manter altura similar a outros inputs Bootstrap com padding ajustado */
+}
+/* <<<< FIM DA NOVA REGRA >>>> */
+
+.custom-file-input:focus ~ .custom-file-label {
+    border-color: #4A90E2;
+    box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.25);
+}
+.form-control:focus {
+    border-color: #4A90E2;
+    box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.25);
+}
+.custom-file-label::after {
+    background-color: #4A90E2;
+    color: white;
+    border-left: 1px solid #357ABD;
+    border-radius: 0 0.5rem 0.5rem 0;
+}
+textarea.form-control {
+    min-height: 100px;
+}
+
+/* Estilo para os botões de rádio customizados (Página Cadastrar PET) */
+.custom-control-label {
+    font-weight: 400;
+    cursor: pointer;
+}
+.custom-radio .custom-control-input:checked ~ .custom-control-label::before {
+    background-color: #4A90E2;
+    border-color: #357ABD;
+}
+.custom-control-input:focus ~ .custom-control-label::before {
+    box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.25);
+}
+.custom-control-input:active ~ .custom-control-label::before {
+    background-color: #a3d0f5;
+    border-color: #a3d0f5;
+}
+
+
+/* --- Botões --- */
+.btn {
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border-radius: 25px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+.btn-success {
+    background-color: #38A169;
+    border-color: #2F855A;
+    color: white !important;
+}
+.btn-success:hover {
+    background-color: #2F855A;
+    border-color: #2F855A;
+}
+.btn-primary {
+    background-color: #4A90E2;
+    border-color: #357ABD;
+    color: white !important;
+}
+.btn-primary:hover {
+    background-color: #357ABD;
+    border-color: #357ABD;
+}
+.btn-danger {
+    background-color: #E53E3E;
+    border-color: #C53030;
+    color: white !important;
+}
+
+/* --- Cards (Dashboard e outros) --- */
+.card {
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.07);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    margin-bottom: 25px;
+    overflow: hidden;
+}
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+.card-header {
+    background-color: #f8fafc; 
+    border-bottom: 1px solid #E2E8F0;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #2D3748;
+    padding: 0.9rem 1.25rem;
+}
+
+.dashboard-stat-card .card-header {
+    text-align: center;
+}
+.card.text-white .card-header, 
+.card.bg-danger .card-header, 
+.card.bg-success .card-header {
+    color: black !important; /* Alterado de black para white */
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+.card-title {
+    font-size: 2.8rem !important;
+    font-weight: 700;
+    text-align: center;
+}
+.card-body .img-fluid {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+}
+.card-visao-geral .card-header {
+    text-align: center;
+}
+
+/* --- Alertas --- */
+.alert {
+    border-left-width: 5px;
+    border-radius: 8px;
+    padding: 1.1rem 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    font-size: 0.95rem;
+}
+.alert-success { border-left-color: #38A169; }
+.alert-danger { border-left-color: #E53E3E; }
+.alert-warning { border-left-color: #DD6B20; }
+.alert-info { border-left-color: #4A90E2; }
+
+/* --- Rodapé --- */
+.footer {
+    background-color: #2D3748 !important;
+    color: #A0AEC0;
+    padding: 1.5rem 0;
+    border-top: 4px solid #4A90E2;
+    width: 100%;
+    margin-top: auto;
+}
+.footer p {
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+    color: #CBD5E0;
+}
+.footer a {
+    color: #CBD5E0 !important;
+    display: inline-block;
+}
+.footer a:hover {
+    color: #fff !important;
+}
+.footer img {
+    opacity: 0.8;
+    transition: opacity 0.2s ease-in-out;
+}
+.footer img:hover {
+    opacity: 1;
+}
+
+
+/* --- Estilos para a Página de Detalhes do PET (`detalhes_pet.html`) --- */
+.pet-detail-card {
+    margin-top: 20px;
+    box-shadow: 0 8px 25px rgba(45, 55, 72, 0.15); /* Sombra mais pronunciada e suave */
+    border: none; /* Remover borda padrão do card se houver */
+}
+
+.pet-detail-card .card-header {
+    background: linear-gradient(135deg, #4A90E2 0%, #50E3C2 100%) !important; /* Mesmo gradiente da navbar */
+    padding: 1.2rem 1.5rem; /* Mais padding no header */
+    border-bottom: none; /* Remover borda inferior do header do card */
+}
+
+.pet-detail-card .page-section-title { /* Título dentro do card-header (ex: Nome do Pet) */
+    color: white !important;
+    font-size: 2rem; /* Tamanho ajustado para o título do pet */
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.25);
+    margin: 0;
+}
+.pet-detail-species { /* (Espécie) ao lado do nome */
+    font-family: 'Nunito', sans-serif !important; /* Garantir a fonte correta */
+    font-size: 0.65em; /* Relativo ao tamanho do h2 */
+    color: rgba(255, 255, 255, 0.85); /* Branco com leve transparência */
+    font-weight: 600;
+    display: block;
+    margin-top: -2px;
+}
+
+.pet-detail-image { /* Imagem principal do pet na página de detalhes */
+    width: 100%; /* Ocupar a largura da coluna */
+    max-height: 350px; /* Limitar altura máxima */
+    object-fit: cover; /* Cobrir a área mantendo proporção */
+    border-radius: 8px;
+    border: 5px solid #ffffff; /* Borda branca grossa */
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.pet-info-section {
+    padding-left: 20px; /* Espaçamento se a imagem estiver à esquerda */
+}
+
+.pet-info-section h4.section-subtitle { /* Subtítulo "Informações do PET" */
+    color: #3498db; /* Azul do tema */
+    margin-top: 0;
+    margin-bottom: 18px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #eef1f5; /* Linha separadora sutil */
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.pet-info-section p {
+    margin-bottom: 10px;
+    font-size: 1rem; /* Tamanho de fonte base para detalhes */
+    color: #5A6779; /* Cinza suave para o texto */
+}
+.pet-info-section p strong { /* Rótulos como "Visto por último em:" */
+    color: #2D3748;
+    font-weight: 700;
+    margin-right: 5px;
+    /* display: inline-block; -- Removido para permitir quebra natural com <br> */
+}
+.pet-comment-text { /* Para o texto do comentário/detalhes adicionais */
+    display: block; /* Para ocupar a própria linha */
+    margin-top: 2px;
+    line-height: 1.7; /* Melhorar leitura de parágrafos mais longos */
+    color: #4A5568;
+}
+
+
+.pet-status-detail { /* Estilo base para o badge/texto de status na página de detalhes */
+    font-size: 1.2rem !important; /* Aumentar um pouco */
+    padding: 0.6rem 1.3rem !important; /* Mais padding */
+    display: inline-block;
+    margin-bottom: 20px; /* Mais espaço abaixo */
+    font-weight: 700 !important;
+    color: white !important; /* Texto sempre branco */
+    border-radius: 25px !important;
+    text-align: center;
+    width: 100%; /* Para ocupar a largura se for o único elemento na linha */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.badge-info { /* Reestilizando .badge-info para nosso propósito de status */
+    background-color: #4A90E2 !important; /* Azul do tema */
+}
+/* Se quiser cores diferentes para status diferentes: */
+
+/* Cores específicas para os status */
+.status-perdi-text { 
+    background-color: #E53E3E !important; /* Vermelho */
+}
+.status-encontrado-text { 
+    background-color: #38A169 !important; /* Verde */
+}
+.status-resolvido-text { /* Opcional: se quiser uma cor diferente quando já resolvido */
+    background-color: #718096 !important; /* Cinza */
+    /* Ou pode usar a mesma cor de .status-encontrado-text */
+}
+
+.pet-detail-card .btn-success { /* Botão de encerrar busca */
+    font-size: 1.05rem; /* Um pouco maior */
+    padding: 0.8rem 1.5rem;
+}
+.pet-detail-card .btn-success i {
+    margin-right: 8px;
+}
+
+.pet-detail-card .card-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+}
+.pet-detail-card .btn-outline-secondary i {
+    margin-right: 5px;
+}
+
+/* Estilo para o botão "Encerrar Busca" na página de detalhes do PET */
+.btn-encerrar-busca-custom {
+    background-color: #5bc0de; /* Azul claro - Exemplo de cor (Bootstrap 'btn-info' color) */
+    border-color: #46b8da;     /* Borda correspondente */
+    color: white !important;   /* Garante que o texto seja branco */
+}
+
+.btn-encerrar-busca-custom:hover {
+    background-color: #31b0d5; /* Tom mais escuro no hover */
+    border-color: #269abc;
+    color: white !important;
+}
+
+/* --- Estilos para Seção de Mensagens na Página de Detalhes do PET --- */
+.pet-message-form-section,
+.pet-messages-list-section {
+    margin-top: 25px;
+    padding-top: 20px;
+    /* border-top: 1px solid #eef1f5;  O <hr> já faz a separação */
+}
+
+.pet-message-form-section h5,
+.pet-messages-list-section h5 {
+    font-weight: 700;
+    color: #2D3748; /* Cor dos títulos */
+    margin-bottom: 15px;
+    font-size: 1.25rem;
+}
+
+.pet-message-form-section .form-group label {
+    font-size: 0.9rem; /* Labels menores no formulário de msg */
+    color: #555;
+}
+.pet-message-form-section .form-control-sm { /* Inputs menores */
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+}
+.pet-message-form-section textarea.form-control-sm {
+    line-height: 1.5;
+}
+.pet-message-form-section .btn-primary { /* Botão de enviar mensagem */
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem; /* Padding menor para btn-sm */
+    border-radius: 20px; /* Consistente com outros botões arredondados */
+    text-transform: none; /* Sem uppercase para este botão */
+}
+.pet-message-form-section .btn-primary i {
+    margin-right: 5px;
+}
+
+
+.message-item {
+    background-color: #f8f9fa; /* Fundo sutil para cada mensagem */
+    border: 1px solid #e9ecef;
+    border-left: 4px solid #4A90E2; /* Destaque com cor do tema */
+    padding: 12px 15px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.message-text {
+    margin-bottom: 5px;
+    color: #333;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    white-space: pre-wrap; /* Para respeitar quebras de linha na mensagem */
+}
+.message-meta {
+    font-size: 0.8rem;
+    color: #777;
+    display: block; /* Para ficar abaixo do texto da mensagem */
+    text-align: right; /* Alinhar metadados à direita */
+}
+.message-meta strong {
+    color: #555;
+}
