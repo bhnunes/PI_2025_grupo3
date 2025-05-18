@@ -3,6 +3,4 @@ python-dotenv
 PyMySQL
 Pillow
 folium
-wordcloud
 matplotlib
-numpy
