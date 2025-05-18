@@ -601,7 +601,7 @@ def add_message(pet_id):
         flash("A mensagem não pode estar vazia.", "warning")
         return redirect(url_for('detalhes_pet', pet_id=pet_id))
     
-    if len(message_text) > 200: # Validação do tamanho (consistente com o DB)
+    if len(message_text) > 100: # Validação do tamanho (consistente com o DB)
         flash("A mensagem é muito longa (máximo de 200 caracteres).", "warning")
         return redirect(url_for('detalhes_pet', pet_id=pet_id))
 
