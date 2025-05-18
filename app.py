@@ -86,6 +86,38 @@ def create_thumbnail(image_path, thumbnail_path, size=THUMBNAIL_SIZE):
         app.logger.error(f"Erro ao criar thumbnail para {image_path}: {e}")
         return False
 
+def delete_pet_files(foto_path, thumbnail_path, app_logger):
+    """Tenta deletar os arquivos de foto e thumbnail do pet."""
+    files_deleted = True
+    try:
+        if foto_path and isinstance(foto_path, str):
+            full_foto_path = os.path.join(app.static_folder, foto_path)
+            if os.path.exists(full_foto_path):
+                os.remove(full_foto_path)
+                app_logger.info(f"Arquivo de foto deletado: {full_foto_path}")
+            else:
+                app_logger.warning(f"Arquivo de foto não encontrado para deleção: {full_foto_path}")
+        else:
+            app_logger.warning(f"Caminho da foto inválido ou ausente para deleção: {foto_path}")
+
+        if thumbnail_path and isinstance(thumbnail_path, str):
+            full_thumbnail_path = os.path.join(app.static_folder, thumbnail_path)
+            if os.path.exists(full_thumbnail_path):
+                os.remove(full_thumbnail_path)
+                app_logger.info(f"Arquivo de thumbnail deletado: {full_thumbnail_path}")
+            else:
+                app_logger.warning(f"Arquivo de thumbnail não encontrado para deleção: {full_thumbnail_path}")
+        else:
+             app_logger.warning(f"Caminho do thumbnail inválido ou ausente para deleção: {thumbnail_path}")
+
+    except OSError as e: # Captura erros de I/O como permissão negada, arquivo em uso, etc.
+        app_logger.error(f"Erro de OS ao deletar arquivos do pet: {e}")
+        files_deleted = False
+    except Exception as e:
+        app_logger.error(f"Erro inesperado ao deletar arquivos do pet: {e}")
+        files_deleted = False
+    return files_deleted
+
 @app.route('/')
 def principal():
     conn = open_conn()
@@ -560,30 +592,69 @@ def dashboard():
     return render_template('dashboard.html', data=data, current_year=datetime.now().year)
 
 
-# Em app.py
 @app.route('/confirmar_encerrar_busca/<int:pet_id>')
 def confirmar_encerrar_busca(pet_id):
-    # Você pode adicionar uma página de confirmação aqui se desejar
-    # Ou processar diretamente e redirecionar
     conn = open_conn()
     if not conn:
         flash("Erro de conexão com o banco.", "danger")
         return redirect(url_for('principal'))
+
+    # Primeiro, buscar os caminhos dos arquivos ANTES de marcar como resolvido
+    pet_file_paths = None
     try:
-        with conn.cursor() as cursor:
-            sql = "UPDATE USERINPUT SET RESOLVIDO = 1, RESOLVIDO_AT = %s WHERE ID = %s AND (RESOLVIDO = 0 OR RESOLVIDO IS NULL)"
-            affected_rows = cursor.execute(sql, (datetime.now(), pet_id))
-            conn.commit()
-        if affected_rows > 0:
-            flash("Busca encerrada com sucesso!", "success")
-        else:
-            flash("Pet não encontrado ou busca já encerrada.", "warning")
+        with conn.cursor() as cursor_select:
+            cursor_select.execute("SELECT FOTO_PATH, THUMBNAIL_PATH FROM USERINPUT WHERE ID = %s", (pet_id,))
+            pet_file_paths = cursor_select.fetchone()
     except pymysql.MySQLError as e:
-        app.logger.error(f"Erro ao encerrar busca para pet ID {pet_id}: {e}")
-        flash("Erro ao atualizar o banco de dados.", "danger")
+        app.logger.error(f"Erro ao buscar caminhos de arquivo para o pet ID {pet_id} antes de deletar: {e}")
+        flash("Erro ao preparar para encerrar busca (não foi possível ler caminhos dos arquivos).", "danger")
+        if conn: conn.close()
+        return redirect(url_for('principal'))
+
+    if not pet_file_paths:
+        flash("Pet não encontrado para buscar caminhos de arquivo.", "warning")
+        if conn: conn.close()
+        return redirect(url_for('principal'))
+
+    # Agora, tentar marcar como resolvido
+    try:
+        with conn.cursor() as cursor_update:
+            sql = "UPDATE USERINPUT SET RESOLVIDO = 1, RESOLVIDO_AT = %s WHERE ID = %s AND (RESOLVIDO = 0 OR RESOLVIDO IS NULL)"
+            affected_rows = cursor_update.execute(sql, (datetime.now(), pet_id))
+            conn.commit()
+
+        if affected_rows > 0:
+            flash("Busca encerrada com sucesso no banco de dados!", "success")
+            
+            # Tentar deletar os arquivos após o commit bem-sucedido
+            app.logger.info(f"Tentando deletar arquivos para o pet ID {pet_id}...")
+            foto_path_db = pet_file_paths.get('FOTO_PATH')
+            thumbnail_path_db = pet_file_paths.get('THUMBNAIL_PATH')
+
+            # Os caminhos no DB devem ser relativos a 'static/', ex: 'uploads/imagens_pet/...'
+            # A função delete_pet_files já usa app.static_folder para construir o caminho absoluto.
+            if delete_pet_files(foto_path_db, thumbnail_path_db, app.logger):
+                app.logger.info(f"Arquivos para o pet ID {pet_id} processados para deleção.")
+                # Não precisamos de um flash específico para a deleção bem-sucedida de arquivos,
+                # a menos que seja muito importante para o usuário saber.
+            else:
+                flash("Busca encerrada, mas houve um problema ao deletar os arquivos de imagem do servidor. Contate o administrador.", "warning")
+        
+        else:
+            flash("Pet não encontrado ou busca já encerrada no banco.", "warning")
+            
+    except pymysql.MySQLError as e:
+        app.logger.error(f"Erro de banco de dados ao encerrar busca para pet ID {pet_id}: {e}")
+        flash("Erro ao atualizar o status do pet no banco de dados.", "danger")
+        if conn: conn.rollback() # Desfaz a transação em caso de erro no UPDATE
+    except Exception as e_main: # Captura outros erros inesperados na lógica principal
+        app.logger.error(f"Erro inesperado na lógica de encerrar busca para pet ID {pet_id}: {e_main}")
+        flash("Ocorreu um erro inesperado ao processar sua solicitação.", "danger")
+        if conn and conn.open: conn.rollback()
     finally:
         if conn:
             conn.close()
+            
     return redirect(url_for('principal'))
 
 
