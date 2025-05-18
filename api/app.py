@@ -1,37 +1,60 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
-from markupsafe import Markup, escape # Importar escape e Markup
+from markupsafe import Markup, escape
 from dotenv import load_dotenv
 import os
 import secrets
 import pymysql
 from datetime import datetime
-from PIL import Image # Para manipulação de imagens
-import folium # Para o mapa
-from werkzeug.utils import secure_filename # Para segurança no upload de arquivos
-
-# Para o dashboard (se mantiver a lógica do exemplo)
+from PIL import Image
+import folium
+from werkzeug.utils import secure_filename
 import base64
 from io import BytesIO
 import matplotlib
-matplotlib.use('Agg') # Define o backend como 'Agg' para não precisar de GUI
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import boto3
+from botocore.exceptions import NoCredentialsError, PartialCredentialsError, ClientError
 
 load_dotenv()
 app = Flask(__name__)
 app.secret_key = secrets.token_urlsafe(16)
 
+# Credenciais e Configurações AWS S3
+S3_BUCKET = os.getenv('S3_BUCKET_NAME')
+S3_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY_ID')
+S3_SECRET_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+S3_REGION = os.getenv('AWS_REGION')
+
+s3_client = None
+if S3_BUCKET and S3_ACCESS_KEY and S3_SECRET_KEY and S3_REGION:
+    try:
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id=S3_ACCESS_KEY,
+            aws_secret_access_key=S3_SECRET_KEY,
+            region_name=S3_REGION
+        )
+        app.logger.info(f"Cliente S3 inicializado para o bucket {S3_BUCKET} na região {S3_REGION}")
+    except Exception as e:
+        app.logger.error(f"Erro ao inicializar cliente S3: {e}")
+else:
+    app.logger.warning("Credenciais S3 ou nome do bucket não configurados. Uploads para S3 estarão desabilitados.")
+
+
 # Configurações de Upload
-UPLOAD_FOLDER_ORIGINAL = os.path.join('static', 'uploads', 'imagens_pet')
-UPLOAD_FOLDER_THUMBNAIL = os.path.join('static', 'uploads', 'thumbnails_pet')
+TMP_UPLOAD_DIR = '/tmp/buscapet_uploads' # Diretório temporário na Vercel
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 THUMBNAIL_SIZE = (100, 100) # Tamanho do thumbnail
 
-app.config['UPLOAD_FOLDER_ORIGINAL'] = UPLOAD_FOLDER_ORIGINAL
-app.config['UPLOAD_FOLDER_THUMBNAIL'] = UPLOAD_FOLDER_THUMBNAIL
 
-# Cria as pastas de upload se não existirem
-os.makedirs(UPLOAD_FOLDER_ORIGINAL, exist_ok=True)
-os.makedirs(UPLOAD_FOLDER_THUMBNAIL, exist_ok=True)
+# Função para criar diretório temporário se não existir
+def ensure_tmp_upload_dir():
+    original_tmp = os.path.join(TMP_UPLOAD_DIR, 'imagens_pet')
+    thumbnail_tmp = os.path.join(TMP_UPLOAD_DIR, 'thumbnails_pet')
+    os.makedirs(original_tmp, exist_ok=True)
+    os.makedirs(thumbnail_tmp, exist_ok=True)
+    return original_tmp, thumbnail_tmp
 
 
 # Registrar filtro nl2br customizado
@@ -77,45 +100,66 @@ def open_conn():
 
 def create_thumbnail(image_path, thumbnail_path, size=THUMBNAIL_SIZE):
     try:
-        img = Image.open(image_path)
-        img.thumbnail(size)
-        img.save(thumbnail_path)
+        with Image.open(image_path) as img: # Usar 'with' para garantir fechamento do arquivo
+            img.thumbnail(size)
+            img.save(thumbnail_path)
         return True
+    except FileNotFoundError:
+        app.logger.error(f"Arquivo de imagem não encontrado em create_thumbnail: {image_path}")
     except Exception as e:
         app.logger.error(f"Erro ao criar thumbnail para {image_path}: {e}")
-        return False
+    return False
 
-def delete_pet_files(foto_path, thumbnail_path, app_logger):
-    """Tenta deletar os arquivos de foto e thumbnail do pet."""
-    files_deleted = True
+
+def upload_to_s3(file_path, bucket_name, s3_file_key, content_type=None):
+    """Faz upload de um arquivo para um bucket S3 e o torna público."""
+    if not s3_client:
+        app.logger.error("Cliente S3 não inicializado. Upload falhou.")
+        return None
     try:
-        if foto_path and isinstance(foto_path, str):
-            full_foto_path = os.path.join(app.static_folder, foto_path)
-            if os.path.exists(full_foto_path):
-                os.remove(full_foto_path)
-                app_logger.info(f"Arquivo de foto deletado: {full_foto_path}")
-            else:
-                app_logger.warning(f"Arquivo de foto não encontrado para deleção: {full_foto_path}")
+        extra_args = {}
+        if content_type:
+            extra_args['ContentType'] = content_type
+        s3_client.upload_file(file_path, bucket_name, s3_file_key, ExtraArgs=extra_args)
+        # URL do objeto no S3
+        file_url = f"https://{bucket_name}.s3.{S3_REGION}.amazonaws.com/{s3_file_key}"
+        app.logger.info(f"Upload bem-sucedido para S3: {file_url}")
+        return file_url
+    except FileNotFoundError:
+        app.logger.error(f"Arquivo não encontrado para upload S3: {file_path}")
+    except NoCredentialsError:
+        app.logger.error("Credenciais AWS não encontradas para upload S3.")
+    except PartialCredentialsError:
+        app.logger.error("Credenciais AWS incompletas para upload S3.")
+    except ClientError as e:
+        # Verifica se o erro é especificamente sobre ACLs não suportadas
+        if e.response.get('Error', {}).get('Code') == 'AccessControlListNotSupported':
+            app.logger.error(f"Erro ao fazer upload para S3 (AccessControlListNotSupported): {e}. "
+                             "Verifique as configurações de 'Object Ownership' do bucket. "
+                             "Se ACLs estão desabilitadas, remova a configuração de ACL no upload.")
         else:
-            app_logger.warning(f"Caminho da foto inválido ou ausente para deleção: {foto_path}")
-
-        if thumbnail_path and isinstance(thumbnail_path, str):
-            full_thumbnail_path = os.path.join(app.static_folder, thumbnail_path)
-            if os.path.exists(full_thumbnail_path):
-                os.remove(full_thumbnail_path)
-                app_logger.info(f"Arquivo de thumbnail deletado: {full_thumbnail_path}")
-            else:
-                app_logger.warning(f"Arquivo de thumbnail não encontrado para deleção: {full_thumbnail_path}")
-        else:
-             app_logger.warning(f"Caminho do thumbnail inválido ou ausente para deleção: {thumbnail_path}")
-
-    except OSError as e: # Captura erros de I/O como permissão negada, arquivo em uso, etc.
-        app_logger.error(f"Erro de OS ao deletar arquivos do pet: {e}")
-        files_deleted = False
+            app.logger.error(f"Erro do cliente S3 durante o upload: {e}")
     except Exception as e:
-        app_logger.error(f"Erro inesperado ao deletar arquivos do pet: {e}")
-        files_deleted = False
-    return files_deleted
+        app.logger.error(f"Erro inesperado durante o upload para S3: {e}")
+    return None
+
+def delete_from_s3(bucket_name, s3_file_key):
+    """Deleta um arquivo de um bucket S3."""
+    if not s3_client:
+        app.logger.error("Cliente S3 não inicializado. Deleção falhou.")
+        return False
+    if not s3_file_key: # Não tentar deletar se a chave for None ou vazia
+        app.logger.warning(f"Chave S3 vazia ou None, deleção ignorada.")
+        return True # Considerar como sucesso se não há nada para deletar
+    try:
+        s3_client.delete_object(Bucket=bucket_name, Key=s3_file_key)
+        app.logger.info(f"Deleção bem-sucedida do S3: s3://{bucket_name}/{s3_file_key}")
+        return True
+    except ClientError as e:
+        app.logger.error(f"Erro do cliente S3 durante a deleção: {e}")
+    except Exception as e:
+        app.logger.error(f"Erro inesperado durante a deleção do S3: {e}")
+    return False
 
 @app.route('/')
 def principal():
@@ -127,7 +171,6 @@ def principal():
     mapa_folium = None
     try:
         with conn.cursor() as cursor:
-            # Garantir que THUMBNAIL_PATH está sendo selecionado
             sql = """
                 SELECT ID, NOME_PET, ESPECIE, BAIRRO, STATUS_PET, THUMBNAIL_PATH, LATITUDE, LONGITUDE
                 FROM USERINPUT 
@@ -138,128 +181,91 @@ def principal():
             pets_no_mapa = cursor.fetchall()
 
         if pets_no_mapa:
-            avg_lat = sum(p['LATITUDE'] for p in pets_no_mapa if p['LATITUDE']) / len([p for p in pets_no_mapa if p['LATITUDE']]) if any(p['LATITUDE'] for p in pets_no_mapa) else -22.7532
-            avg_lon = sum(p['LONGITUDE'] for p in pets_no_mapa if p['LONGITUDE']) / len([p for p in pets_no_mapa if p['LONGITUDE']]) if any(p['LONGITUDE'] for p in pets_no_mapa) else -47.3330
+            avg_lat = sum(p['LATITUDE'] for p in pets_no_mapa if p.get('LATITUDE')) / len([p for p in pets_no_mapa if p.get('LATITUDE')]) if any(p.get('LATITUDE') for p in pets_no_mapa) else -22.7532
+            avg_lon = sum(p['LONGITUDE'] for p in pets_no_mapa if p.get('LONGITUDE')) / len([p for p in pets_no_mapa if p.get('LONGITUDE')]) if any(p.get('LONGITUDE') for p in pets_no_mapa) else -47.3330
             
-            mapa_folium = folium.Map(location=[avg_lat, avg_lon], zoom_start=13, tiles="CartoDB positron") # Tile mais limpo
+            mapa_folium = folium.Map(location=[avg_lat, avg_lon], zoom_start=13, tiles="CartoDB positron")
 
             for pet in pets_no_mapa:
                 if pet.get('LATITUDE') and pet.get('LONGITUDE') and pet.get('THUMBNAIL_PATH'):
                     
-                    # URL para a página de detalhes do PET
                     detalhes_pet_url = url_for('detalhes_pet', pet_id=pet['ID'], _external=True)
-                    # --- LÓGICA PARA O ÍCONE COLORIDO DO MARCADOR ---
-                    status_pet_mapa = pet.get('STATUS_PET', 'Perdi meu PET') # Default para consistência
+                    status_pet_mapa = pet.get('STATUS_PET', 'Perdi meu PET')
                     
-                    # Caminho do thumbnail para usar no ícone do mapa
-                    thumbnail_url_para_icone = '#'
-                    if pet.get('THUMBNAIL_PATH') and isinstance(pet['THUMBNAIL_PATH'], str):
-                        thumbnail_url_para_icone = url_for('static', filename=pet['THUMBNAIL_PATH'])
-
-                    icon_border_color = "red" # Default para 'Perdi meu PET'
+                    thumbnail_s3_key = pet.get('THUMBNAIL_PATH')
+                    thumbnail_url_para_icone = f"https://{S3_BUCKET}.s3.{S3_REGION}.amazonaws.com/{thumbnail_s3_key}" if thumbnail_s3_key and S3_BUCKET and S3_REGION else '#'
+                    
+                    icon_border_color = "red"
                     if status_pet_mapa == "Encontrei um PET":
                         icon_border_color = "green"
                     
-                    # HTML para o DivIcon (ícone customizado com borda colorida)
                     icon_html = f"""
                     <div style="
-                        width: 52px; /* Tamanho total do ícone (imagem + borda) */
-                        height: 52px;
-                        border-radius: 50%; /* Círculo */
-                        background-color: {icon_border_color}; /* Cor da borda/fundo */
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        box-shadow: 0px 0px 5px rgba(0,0,0,0.5);
-                        padding: 2px; /* Espaçamento para a borda */
-                        ">
-                        <img src="{thumbnail_url_para_icone}" 
-                            alt="T" 
-                            style="
-                                width: 48px; /* Tamanho da imagem interna */
-                                height: 48px; 
-                                border-radius: 50%; 
-                                object-fit: cover;
-                            ">
+                        width: 52px; height: 52px; border-radius: 50%;
+                        background-color: {icon_border_color}; display: flex;
+                        justify-content: center; align-items: center;
+                        box-shadow: 0px 0px 5px rgba(0,0,0,0.5); padding: 2px;">
+                        <img src="{thumbnail_url_para_icone}" alt="T" 
+                             style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover;">
                     </div>
                     """
                     custom_map_icon = folium.DivIcon(
-                        icon_size=(52, 52), # Tamanho do container do DivIcon
-                        icon_anchor=(26, 52), # Ponto de ancoragem (metade da largura, base)
+                        icon_size=(52, 52),
+                        icon_anchor=(26, 52),
                         html=icon_html
                     )
-                    # --- FIM DA LÓGICA DO ÍCONE COLORIDO ---
-
-                    # HTML para o POPUP do marcador (que agora é um link para a página de detalhes)
-                    # Vamos simplificar o popup para ser apenas um link claro
+                    
                     popup_html_content = f"""
                     <div style="font-family: 'Nunito', sans-serif; text-align:center; min-width:180px; padding: 10px;">
                         <strong style="font-size: 1.1em; color: #2D3748;">{pet.get('NOME_PET', 'Pet')}</strong><br>
                         <span style="font-size: 0.9em; color: #6A7588;">({pet.get('ESPECIE', '')})</span><br>
-                        <a href="{detalhes_pet_url}" target="_blank" 
-                           class="popup-details-link"> 
+                        <a href="{detalhes_pet_url}" target="_blank" class="popup-details-link"> 
                            Ver Detalhes do PET
                         </a>
                     </div>
                     """
-
-                    # Estilos para o popup (para garantir que o link seja bem visível e clicável)
                     popup_styles = """
                     <style>
                         body { margin:0; font-family: 'Nunito', sans-serif; }
                         .popup-details-link {
-                            display: inline-block;
-                            margin-top: 8px;
-                            padding: 6px 12px;
-                            background-color: #4A90E2; /* Cor primária do tema */
-                            color: white !important; /* Cor do texto branca */
-                            text-decoration: none;
-                            border-radius: 20px; /* Bordas arredondadas como os botões */
-                            font-weight: 600;
-                            font-size: 0.9em;
+                            display: inline-block; margin-top: 8px; padding: 6px 12px;
+                            background-color: #4A90E2; color: white !important; text-decoration: none;
+                            border-radius: 20px; font-weight: 600; font-size: 0.9em;
                             transition: background-color 0.2s ease;
                         }
-                        .popup-details-link:hover {
-                            background-color: #357ABD; /* Tom mais escuro no hover */
-                        }
+                        .popup-details-link:hover { background-color: #357ABD; }
                     </style>
                     """
-
                     full_popup_html = popup_styles + popup_html_content
                     
-                    iframe = folium.IFrame(full_popup_html, width=220, height=110) # Iframe ajustado
+                    iframe = folium.IFrame(full_popup_html, width=220, height=110)
                     popup = folium.Popup(iframe, max_width=220)
-
-                    # # Ícone do marcador no mapa (thumbnail)
-                    # # Garantir que THUMBNAIL_PATH use barras normais ao construir o caminho do sistema
-                    # thumbnail_rel_path = pet['THUMBNAIL_PATH'].replace('/', os.sep) if pet['THUMBNAIL_PATH'] else None
-                    # thumbnail_filesystem_path = os.path.join(app.static_folder, thumbnail_rel_path) if thumbnail_rel_path else None
-
-                    # if thumbnail_filesystem_path and os.path.exists(thumbnail_filesystem_path):
-                    #     custom_icon = folium.CustomIcon(thumbnail_filesystem_path, icon_size=(50,50)) # Ícone um pouco maior
-                    # else:
-                    #     app.logger.warning(f"Thumbnail não encontrado ou caminho inválido: {thumbnail_filesystem_path if thumbnail_filesystem_path else 'N/A'}. Usando ícone padrão.")
-                    #     custom_icon = folium.Icon(color='orange', icon='paw', prefix='fa') # Cor alterada para destaque
                     
                     marker = folium.Marker(
                         location=[pet['LATITUDE'], pet['LONGITUDE']],
                         icon=custom_map_icon,
-                        # Tooltip ao passar o mouse
                         tooltip=f"<strong>{pet.get('NOME_PET', 'Pet')}</strong><br>Status: {status_pet_mapa}<br>Clique para mais informações"
                     )
-                    marker.add_child(popup) # O popup agora contém o link "Ver Detalhes"
+                    marker.add_child(popup)
                     marker.add_to(mapa_folium)
 
             mapa_html = mapa_folium._repr_html_() if mapa_folium else "<p class='text-center alert alert-info'>Nenhum pet perdido para exibir no mapa no momento.</p>"
         else:
             mapa_folium = folium.Map(location=[-22.7532, -47.3330], zoom_start=12, tiles="CartoDB positron")
             mapa_html = mapa_folium._repr_html_()
-            flash("Nenhum pet cadastrado como perdido ou encontrado no momento.", "info")
+            if not app.debug: # Não mostrar flash se for só o mapa vazio em debug
+                 flash("Nenhum pet cadastrado como perdido ou encontrado no momento.", "info")
             
     except pymysql.MySQLError as e:
         app.logger.error(f"Erro ao buscar pets para o mapa: {e}")
         flash("Erro ao carregar dados dos pets.", "danger")
         mapa_html = "<p class='text-center alert alert-danger'>Erro ao carregar o mapa. Tente novamente mais tarde.</p>"
+    except Exception as e_geral: # Captura outros erros inesperados
+        app.logger.error(f"Erro geral na rota principal: {e_geral}")
+        flash("Ocorreu um erro inesperado ao carregar a página principal.", "danger")
+        # Retorna um mapa vazio em caso de erro não previsto para não quebrar a página
+        mapa_folium_erro = folium.Map(location=[-22.7532, -47.3330], zoom_start=12, tiles="CartoDB positron")
+        mapa_html = mapa_folium_erro._repr_html_()
     finally:
         if conn:
             conn.close()
@@ -277,28 +283,31 @@ def detalhes_pet(pet_id):
         return redirect(url_for('principal'))
 
     pet_info = None
-    latest_messages = [] # Lista para as mensagens
+    latest_messages = []
     try:
         with conn.cursor() as cursor:
-            # Query precisa buscar todos os campos necessários para a página de detalhes
-            sql = """
+            sql_pet = """
                 SELECT ID, NOME_PET, ESPECIE, RUA, BAIRRO, CIDADE, CONTATO, COMENTARIO, 
-                       FOTO_PATH, CREATED_AT, STATUS_PET, RESOLVIDO
+                       FOTO_PATH, THUMBNAIL_PATH, CREATED_AT, STATUS_PET, RESOLVIDO, RESOLVIDO_AT 
                 FROM USERINPUT 
                 WHERE ID = %s
-            """
-            cursor.execute(sql, (pet_id,))
+            """ # Adicionado THUMBNAIL_PATH e RESOLVIDO_AT se precisar
+            cursor.execute(sql_pet, (pet_id,))
             pet_info = cursor.fetchone()
-            if pet_info: # Buscar mensagens apenas se o pet for encontrado
+
+            if pet_info:
                 sql_messages = """
-                    SELECT CommenterName, MessageText, CreatedAt
+                    SELECT MessageID, CommenterName, MessageText, CreatedAt
                     FROM MESSAGES
                     WHERE PetID = %s
                     ORDER BY CreatedAt DESC
                     LIMIT 3 
-                """ # Busca as 3 últimas mensagens
+                """
                 cursor.execute(sql_messages, (pet_id,))
                 latest_messages = cursor.fetchall()
+            else: # Pet não encontrado
+                flash("Pet não encontrado.", "warning")
+                return redirect(url_for('principal'))
 
     except pymysql.MySQLError as e:
         app.logger.error(f"Erro ao buscar detalhes do pet ID {pet_id}: {e}")
@@ -308,31 +317,31 @@ def detalhes_pet(pet_id):
         if conn:
             conn.close()
 
+    # Se pet_info ainda for None aqui, significa que o pet não foi encontrado (já tratado acima)
+    # Mas por segurança, adicionamos uma verificação, embora o redirect já devesse ter ocorrido.
     if not pet_info:
-        flash("Pet não encontrado.", "warning")
+         # Este flash pode ser redundante se o de cima já foi acionado
+        flash("Informações do pet não puderam ser carregadas.", "danger")
         return redirect(url_for('principal'))
 
-    foto_url = '#'
-    if pet_info.get('FOTO_PATH') and isinstance(pet_info['FOTO_PATH'], str):
-        # FOTO_PATH já deve estar como 'uploads/imagens_pet/arquivo.png'
-        foto_url = url_for('static', filename=pet_info['FOTO_PATH'])
+
+    foto_s3_key = pet_info.get('FOTO_PATH')
+    foto_url = f"https://{S3_BUCKET}.s3.{S3_REGION}.amazonaws.com/{foto_s3_key}" if foto_s3_key and S3_BUCKET and S3_REGION else '#'
         
     url_encerrar = url_for('confirmar_encerrar_busca', pet_id=pet_info['ID'])
 
-# Definir classe CSS para o status
-    status_pet_classe = "status-perdi-text" # Default
-    if pet_info.get('STATUS_PET') == "Encontrei um PET":
+    status_pet_classe = "status-perdi-text" 
+    if pet_info.get('RESOLVIDO'):
+        status_pet_classe = "status-resolvido-text"
+    elif pet_info.get('STATUS_PET') == "Encontrei um PET":
         status_pet_classe = "status-encontrado-text"
-    elif pet_info.get('RESOLVIDO'): # Se já resolvido, pode ter uma classe diferente ou a mesma de encontrado
-        status_pet_classe = "status-resolvido-text" # Exemplo para uma cor diferente se resolvido
-
 
     return render_template('detalhes_pet.html', 
                            pet=pet_info, 
                            foto_url=foto_url,
                            url_encerrar=url_encerrar,
                            status_classe=status_pet_classe,
-                           messages=latest_messages, # <<<< PASSANDO AS MENSAGENS PARA O TEMPLATE
+                           messages=latest_messages,
                            current_year=datetime.now().year)
 
 
@@ -359,128 +368,170 @@ def encerrar_busca(pet_id):
 
 @app.route('/cadastrar-pet', methods=['GET', 'POST'])
 def cadastrar_pet():
-    conn = open_conn()
-    if not conn:
-        flash("Erro de conexão com o banco de dados. Não é possível carregar os bairros.", "danger")
-        return render_template('cadastrar_pet.html', bairros=[])
+    # Tenta abrir a conexão para buscar bairros, mas apenas se for GET
+    # Para POST, a conexão será aberta dentro do bloco de processamento se necessário
+    conn_for_bairros = None
+    if request.method == 'GET':
+        conn_for_bairros = open_conn()
+        if not conn_for_bairros:
+            flash("Erro de conexão com o banco de dados. Não é possível carregar os bairros.", "danger")
+            # Mesmo com erro, renderiza o template para o usuário ver a mensagem
+            return render_template('cadastrar_pet.html', bairros=[]) 
 
     bairros = []
-    try:
-        with conn.cursor() as cursor:
-            cursor.execute("SELECT DISTINCT BAIRRO FROM LOCATIONS ORDER BY BAIRRO ASC;")
-            bairros_data = cursor.fetchall()
-            bairros = [row['BAIRRO'] for row in bairros_data]
-    except pymysql.MySQLError as e:
-        app.logger.error(f"Erro ao buscar bairros: {e}")
-        flash("Erro ao carregar lista de bairros.", "danger")
+    if conn_for_bairros: # Se a conexão foi bem-sucedida para GET
+        try:
+            with conn_for_bairros.cursor() as cursor:
+                cursor.execute("SELECT DISTINCT BAIRRO FROM LOCATIONS ORDER BY BAIRRO ASC;")
+                bairros_data = cursor.fetchall()
+                bairros = [row['BAIRRO'] for row in bairros_data]
+        except pymysql.MySQLError as e:
+            app.logger.error(f"Erro ao buscar bairros: {e}")
+            flash("Erro ao carregar lista de bairros.", "danger")
+        finally:
+            conn_for_bairros.close()
 
     if request.method == 'POST':
+        # Obter dados do formulário
         nome_pet = request.form.get('nome_pet')
         especie = request.form.get('especie')
         rua = request.form.get('rua')
         bairro = request.form.get('bairro')
-        cidade = request.form.get('cidade', 'Americana/SP') # Default se não enviado
+        cidade = request.form.get('cidade', 'Americana/SP')
         contato = request.form.get('contato')
         comentario = request.form.get('comentario')
-        status_pet = request.form.get('status_pet', 'Perdi meu PET') # <<<< NOVO CAMPO
-        
-        if 'foto_pet' not in request.files:
-            flash('Nenhum arquivo de foto enviado!', 'danger')
-            return redirect(request.url)
+        status_pet = request.form.get('status_pet', 'Perdi meu PET')
+
+        # Validação do arquivo
+        if 'foto_pet' not in request.files or not request.files['foto_pet'].filename:
+            flash('Nenhuma foto selecionada ou arquivo inválido!', 'danger')
+            return render_template('cadastrar_pet.html', bairros=bairros) # Re-renderiza com bairros
         
         file = request.files['foto_pet']
-        if file.filename == '':
-            flash('Nenhum arquivo selecionado!', 'danger')
-            return redirect(request.url)
 
-        if file and allowed_file(file.filename):
-            filename = secure_filename(f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}")
-            original_filepath = os.path.join(app.config['UPLOAD_FOLDER_ORIGINAL'], filename)
-            thumbnail_filename = f"thumb_{filename}"
-            thumbnail_filepath = os.path.join(app.config['UPLOAD_FOLDER_THUMBNAIL'], thumbnail_filename)
+        if not (file and allowed_file(file.filename)):
+            flash('Tipo de arquivo não permitido!', 'danger')
+            return render_template('cadastrar_pet.html', bairros=bairros)
+
+        # Gerar nomes de arquivo e caminhos
+        # Adicionar microssegundos para maior unicidade em caso de uploads rápidos
+        filename_base = secure_filename(file.filename)
+        timestamp_str = datetime.now().strftime('%Y%m%d%H%M%S%f') 
+        unique_filename = f"{timestamp_str}_{filename_base}"
+        
+        original_tmp_dir, thumbnail_tmp_dir = ensure_tmp_upload_dir()
+
+        temp_original_filepath = os.path.join(original_tmp_dir, unique_filename)
+        temp_thumbnail_filename = f"thumb_{unique_filename}"
+        temp_thumbnail_filepath = os.path.join(thumbnail_tmp_dir, temp_thumbnail_filename)
+
+        # Definir chaves S3
+        s3_original_key = f"uploads/imagens_pet/{unique_filename}"
+        s3_thumbnail_key = f"uploads/thumbnails_pet/{temp_thumbnail_filename}"
+        
+        foto_url_s3 = None
+        thumbnail_url_s3 = None
+
+        try:
+            file.save(temp_original_filepath) # Salva no /tmp primeiro
             
-            try:
-                file.save(original_filepath)
-                if not create_thumbnail(original_filepath, thumbnail_filepath):
-                    flash('Erro ao criar thumbnail da imagem.', 'danger')
-                    # Considerar remover o arquivo original se o thumbnail falhar
-                    if os.path.exists(original_filepath):
-                        os.remove(original_filepath)
-                    return redirect(request.url)
+            if create_thumbnail(temp_original_filepath, temp_thumbnail_filepath):
+                # Upload para S3
+                content_type = file.content_type or 'application/octet-stream' # Default content type
+                
+                app.logger.info(f"Tentando upload da imagem original para S3: {s3_original_key}")
+                foto_url_s3 = upload_to_s3(temp_original_filepath, S3_BUCKET, s3_original_key, content_type=content_type)
+                
+                app.logger.info(f"Tentando upload do thumbnail para S3: {s3_thumbnail_key}")
+                thumbnail_url_s3 = upload_to_s3(temp_thumbnail_filepath, S3_BUCKET, s3_thumbnail_key, content_type=content_type)
+
+                if not (foto_url_s3 and thumbnail_url_s3):
+                    flash('Erro ao fazer upload das imagens para o armazenamento na nuvem. Tente novamente.', 'danger')
+                    # Limpeza no S3 se um upload falhou e o outro não
+                    if foto_url_s3: delete_from_s3(S3_BUCKET, s3_original_key)
+                    if thumbnail_url_s3: delete_from_s3(S3_BUCKET, s3_thumbnail_key)
+                    raise Exception("Falha no upload para o S3") # Força o bloco except abaixo
 
                 # Obter coordenadas da tabela LOCATIONS
                 lat, lon = None, None
-                if conn: # Reabrir conexão se fechou após buscar bairros
-                    if not conn.open: conn = open_conn()
-                
-                if conn and bairro and rua: # Garantir que temos conexão e dados para buscar
+                conn_coords = open_conn() # Nova conexão para buscar coordenadas
+                if conn_coords:
                     try:
-                        with conn.cursor() as cursor_coords:
-                            sql_coords = "SELECT LATITUDE, LONGITUDE FROM LOCATIONS WHERE BAIRRO = %s AND RUA = %s LIMIT 1"
-                            cursor_coords.execute(sql_coords, (bairro, rua))
-                            coords_data = cursor_coords.fetchone()
-                            if coords_data:
-                                lat, lon = coords_data['LATITUDE'], coords_data['LONGITUDE']
-                            else:
-                                flash(f'Coordenadas não encontradas para {rua}, {bairro}. O pet será cadastrado sem geolocalização precisa no mapa.', 'warning')
-                    except pymysql.MySQLError as e:
-                        app.logger.error(f"Erro ao buscar coordenadas: {e}")
+                        if bairro and rua:
+                            with conn_coords.cursor() as cursor_coords:
+                                sql_coords = "SELECT LATITUDE, LONGITUDE FROM LOCATIONS WHERE BAIRRO = %s AND RUA = %s LIMIT 1"
+                                cursor_coords.execute(sql_coords, (bairro, rua))
+                                coords_data = cursor_coords.fetchone()
+                                if coords_data:
+                                    lat, lon = coords_data['LATITUDE'], coords_data['LONGITUDE']
+                                else:
+                                    flash(f'Coordenadas não encontradas para {rua}, {bairro}. O pet será cadastrado sem geolocalização precisa no mapa.', 'warning')
+                        else:
+                            flash('Bairro ou rua não fornecidos para busca de coordenadas.', 'warning')
+                    except pymysql.MySQLError as e_coords:
+                        app.logger.error(f"Erro ao buscar coordenadas: {e_coords}")
                         flash('Erro ao obter coordenadas. O pet será cadastrado sem geolocalização precisa.', 'warning')
+                    finally:
+                        conn_coords.close()
                 else:
-                     flash('Não foi possível buscar coordenadas devido à falta de dados ou conexão.', 'warning')
+                    flash('Não foi possível conectar ao banco para buscar coordenadas.', 'warning')
 
 
-                # Salvar no banco
-                if conn:
-                     if not conn.open: conn = open_conn()
-                
-                if conn:
+                # Salvar no banco de dados as CHAVES S3
+                conn_db_insert = open_conn()
+                if conn_db_insert:
                     try:
-                        with conn.cursor() as cursor_insert:
+                        with conn_db_insert.cursor() as cursor_insert:
                             sql_insert = """
                                 INSERT INTO USERINPUT 
                                 (NOME_PET, ESPECIE, RUA, BAIRRO, CIDADE, CONTATO, COMENTARIO, 
                                  FOTO_PATH, THUMBNAIL_PATH, CREATED_AT, RESOLVIDO, LATITUDE, LONGITUDE,
-                                 STATUS_PET) -- <<<< ADICIONADA NOVA COLUNA
-                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0, %s, %s, %s) -- <<<< ADICIONADO NOVO PLACEHOLDER
+                                 STATUS_PET)
+                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0, %s, %s, %s)
                             """
-                            # ---- CORREÇÃO IMPORTANTE AQUI ----
-                            # Caminhos relativos a partir de 'static' para URL_FOR, usando '/'
-                            db_foto_path = os.path.join('uploads', 'imagens_pet', filename).replace(os.sep, '/')
-                            db_thumbnail_path = os.path.join('uploads', 'thumbnails_pet', thumbnail_filename).replace(os.sep, '/')
-                            # ---- FIM DA CORREÇÃO ----
-
                             cursor_insert.execute(sql_insert, 
                                                 (nome_pet, especie, rua, bairro, cidade, contato, comentario,
-                                                db_foto_path, db_thumbnail_path, datetime.now(), lat, lon,
-                                                status_pet)) # <<<< ADICIONADO NOVO VALOR
-                            conn.commit()
+                                                s3_original_key, s3_thumbnail_key, datetime.now(), lat, lon,
+                                                status_pet))
+                            conn_db_insert.commit()
                             flash('Pet cadastrado com sucesso!', 'success')
+                            # Limpar arquivos temporários somente após tudo dar certo
+                            if os.path.exists(temp_original_filepath): os.remove(temp_original_filepath)
+                            if os.path.exists(temp_thumbnail_filepath): os.remove(temp_thumbnail_filepath)
                             return redirect(url_for('principal'))
-                    except pymysql.MySQLError as e:
-                        app.logger.error(f"Erro ao inserir pet no banco: {e}")
-                        flash(f'Erro ao salvar dados no banco: {e}', 'danger')
-                        # Limpar arquivos se o DB falhar
-                        if os.path.exists(original_filepath): os.remove(original_filepath)
-                        if os.path.exists(thumbnail_filepath): os.remove(thumbnail_filepath)
-                else:
-                    flash('Erro de conexão com o banco ao tentar salvar o pet.', 'danger')
-                    if os.path.exists(original_filepath): os.remove(original_filepath)
-                    if os.path.exists(thumbnail_filepath): os.remove(thumbnail_filepath)
+                    except pymysql.MySQLError as e_db:
+                        app.logger.error(f"Erro ao inserir pet no banco: {e_db}")
+                        flash(f'Erro ao salvar dados no banco: {e_db}', 'danger')
+                        conn_db_insert.rollback()
+                        # Se falhar ao salvar no DB, deletar do S3 para manter consistência
+                        if foto_url_s3: delete_from_s3(S3_BUCKET, s3_original_key)
+                        if thumbnail_url_s3: delete_from_s3(S3_BUCKET, s3_thumbnail_key)
+                    finally:
+                        conn_db_insert.close()
+                else: # Falha ao conectar para inserir no DB
+                     flash('Erro de conexão com o banco ao tentar salvar o pet.', 'danger')
+                     if foto_url_s3: delete_from_s3(S3_BUCKET, s3_original_key)
+                     if thumbnail_url_s3: delete_from_s3(S3_BUCKET, s3_thumbnail_key)
 
-
-            except Exception as e_file:
-                app.logger.error(f"Erro no processamento do arquivo: {e_file}")
-                flash(f'Erro ao processar arquivo: {e_file}', 'danger')
-                return redirect(request.url)
-        else:
-            flash('Tipo de arquivo não permitido!', 'danger')
-            return redirect(request.url)
-    
-    # Fechar a conexão principal se ainda estiver aberta e não for usada no POST
-    if conn and request.method == 'GET':
-        conn.close()
+            else: # Falha ao criar thumbnail
+                flash('Erro ao processar a imagem (não foi possível criar miniatura).', 'danger')
         
+        except Exception as e_file_proc: # Captura erros de file.save, create_thumbnail, S3 uploads
+            app.logger.error(f"Erro no processamento do arquivo ou upload S3: {e_file_proc}")
+            flash(f'Ocorreu um erro ao processar o arquivo da foto: {e_file_proc}', 'danger')
+        finally: 
+            # Garantir limpeza dos arquivos temporários em caso de qualquer erro no try principal
+            if 'temp_original_filepath' in locals() and os.path.exists(temp_original_filepath):
+                try: os.remove(temp_original_filepath)
+                except OSError as e_os_remove: app.logger.error(f"Erro ao remover temp original: {e_os_remove}")
+            if 'temp_thumbnail_filepath' in locals() and os.path.exists(temp_thumbnail_filepath):
+                try: os.remove(temp_thumbnail_filepath)
+                except OSError as e_os_remove: app.logger.error(f"Erro ao remover temp thumbnail: {e_os_remove}")
+        
+        # Se chegou aqui após um erro no POST, re-renderiza o formulário com mensagens e bairros
+        return render_template('cadastrar_pet.html', bairros=bairros)
+
+    # Para GET request, apenas renderiza o formulário com a lista de bairros
     return render_template('cadastrar_pet.html', bairros=bairros)
 
 @app.route('/buscar_ruas_por_bairro')
@@ -595,64 +646,64 @@ def confirmar_encerrar_busca(pet_id):
     conn = open_conn()
     if not conn:
         flash("Erro de conexão com o banco.", "danger")
-        return redirect(url_for('principal'))
+        return redirect(url_for('detalhes_pet', pet_id=pet_id)) # Redireciona para detalhes em caso de erro de conexão
 
-    # Primeiro, buscar os caminhos dos arquivos ANTES de marcar como resolvido
     pet_file_paths = None
     try:
         with conn.cursor() as cursor_select:
+            # Buscamos FOTO_PATH e THUMBNAIL_PATH para deletar do S3
             cursor_select.execute("SELECT FOTO_PATH, THUMBNAIL_PATH FROM USERINPUT WHERE ID = %s", (pet_id,))
             pet_file_paths = cursor_select.fetchone()
     except pymysql.MySQLError as e:
         app.logger.error(f"Erro ao buscar caminhos de arquivo para o pet ID {pet_id} antes de deletar: {e}")
         flash("Erro ao preparar para encerrar busca (não foi possível ler caminhos dos arquivos).", "danger")
         if conn: conn.close()
-        return redirect(url_for('principal'))
+        return redirect(url_for('detalhes_pet', pet_id=pet_id))
 
     if not pet_file_paths:
         flash("Pet não encontrado para buscar caminhos de arquivo.", "warning")
         if conn: conn.close()
-        return redirect(url_for('principal'))
+        return redirect(url_for('principal')) # Pet não existe, volta para principal
 
-    # Agora, tentar marcar como resolvido
     try:
         with conn.cursor() as cursor_update:
-            sql = "UPDATE USERINPUT SET RESOLVIDO = 1, RESOLVIDO_AT = %s WHERE ID = %s AND (RESOLVIDO = 0 OR RESOLVIDO IS NULL)"
-            affected_rows = cursor_update.execute(sql, (datetime.now(), pet_id))
+            sql_update = "UPDATE USERINPUT SET RESOLVIDO = 1, RESOLVIDO_AT = %s WHERE ID = %s AND (RESOLVIDO = 0 OR RESOLVIDO IS NULL)"
+            affected_rows = cursor_update.execute(sql_update, (datetime.now(), pet_id))
             conn.commit()
 
         if affected_rows > 0:
             flash("Busca encerrada com sucesso no banco de dados!", "success")
             
-            # Tentar deletar os arquivos após o commit bem-sucedido
-            app.logger.info(f"Tentando deletar arquivos para o pet ID {pet_id}...")
-            foto_path_db = pet_file_paths.get('FOTO_PATH')
-            thumbnail_path_db = pet_file_paths.get('THUMBNAIL_PATH')
+            app.logger.info(f"Tentando deletar arquivos S3 para o pet ID {pet_id}...")
+            s3_foto_key = pet_file_paths.get('FOTO_PATH')
+            s3_thumbnail_key = pet_file_paths.get('THUMBNAIL_PATH')
 
-            # Os caminhos no DB devem ser relativos a 'static/', ex: 'uploads/imagens_pet/...'
-            # A função delete_pet_files já usa app.static_folder para construir o caminho absoluto.
-            if delete_pet_files(foto_path_db, thumbnail_path_db, app.logger):
-                app.logger.info(f"Arquivos para o pet ID {pet_id} processados para deleção.")
-                # Não precisamos de um flash específico para a deleção bem-sucedida de arquivos,
-                # a menos que seja muito importante para o usuário saber.
+            foto_deleted = delete_from_s3(S3_BUCKET, s3_foto_key)
+            thumb_deleted = delete_from_s3(S3_BUCKET, s3_thumbnail_key)
+
+            if foto_deleted and thumb_deleted:
+                app.logger.info(f"Arquivos S3 para o pet ID {pet_id} processados para deleção (sucesso ou não existiam).")
             else:
-                flash("Busca encerrada, mas houve um problema ao deletar os arquivos de imagem do servidor. Contate o administrador.", "warning")
-        
+                # Mesmo que a deleção falhe, a busca no DB foi encerrada.
+                # O warning é para alertar o administrador sobre possíveis arquivos órfãos.
+                flash("Busca encerrada, mas houve um problema ao tentar deletar os arquivos de imagem do armazenamento na nuvem. Verifique os logs do servidor.", "warning")
         else:
-            flash("Pet não encontrado ou busca já encerrada no banco.", "warning")
+            flash("Pet não encontrado para encerrar a busca ou a busca já estava encerrada.", "info") # Mensagem mais informativa
             
-    except pymysql.MySQLError as e:
-        app.logger.error(f"Erro de banco de dados ao encerrar busca para pet ID {pet_id}: {e}")
+    except pymysql.MySQLError as e_db_update:
+        app.logger.error(f"Erro de banco de dados ao encerrar busca para pet ID {pet_id}: {e_db_update}")
         flash("Erro ao atualizar o status do pet no banco de dados.", "danger")
-        if conn: conn.rollback() # Desfaz a transação em caso de erro no UPDATE
-    except Exception as e_main: # Captura outros erros inesperados na lógica principal
-        app.logger.error(f"Erro inesperado na lógica de encerrar busca para pet ID {pet_id}: {e_main}")
+        if conn: conn.rollback()
+    except Exception as e_main_logic:
+        app.logger.error(f"Erro inesperado na lógica de encerrar busca para pet ID {pet_id}: {e_main_logic}")
         flash("Ocorreu um erro inesperado ao processar sua solicitação.", "danger")
         if conn and conn.open: conn.rollback()
     finally:
         if conn:
             conn.close()
             
+    # Sempre redireciona para a página de detalhes do pet após a tentativa de encerrar
+    # assim o usuário vê o status atualizado (ou a mensagem de erro se a busca já estava encerrada)
     return redirect(url_for('principal'))
 
 
