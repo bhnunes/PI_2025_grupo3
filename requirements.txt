@@ -4,3 +4,4 @@ PyMySQL
 Pillow
 folium
 matplotlib
+boto3
