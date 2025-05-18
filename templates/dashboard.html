@@ -58,17 +58,6 @@
             </div>
         </div>
         {% endif %}
-
-        {% if data.wordcloud_image %}
-        <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-header"><i class="fas fa-cloud"></i> Nuvem de Palavras (Comentários)</div>
-                <div class="card-body text-center">
-                    <img src="data:image/png;base64,{{ data.wordcloud_image }}" alt="Nuvem de Palavras" class="img-fluid" style="max-height: 250px;">
-                </div>
-            </div>
-        </div>
-        {% endif %}
     </div>
 
     {% if data.latest_cases %}

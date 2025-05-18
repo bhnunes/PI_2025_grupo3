@@ -510,7 +510,7 @@ def gerar_dados_dashboard_pets():
     conn = open_conn()
     if not conn: return None, None, None, None, True # sem_dados = True
 
-    wordcloud_image, latest_cases, stats_chart, sem_dados = None, None, None, True
+    latest_cases, stats_chart, sem_dados = None, None, True
     
     try:
         with conn.cursor() as cursor:
@@ -568,7 +568,6 @@ def gerar_dados_dashboard_pets():
             "total_perdidos": total_perdidos,
             "total_encontrados": total_encontrados,
             "top_bairros_perdidos": top_bairros_perdidos,
-            "wordcloud_image": wordcloud_image,
             "latest_cases": latest_cases,
             "stats_chart": stats_chart,
             "sem_dados": sem_dados if not (total_perdidos > 0 or total_encontrados > 0 or comentarios_data) else False
